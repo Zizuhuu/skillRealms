@@ -24,12 +24,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser ? 'user found' : 'no user');
       if (firebaseUser) {
         setUser({
           email: firebaseUser.email,
           full_name: firebaseUser.displayName || '',
           role: 'user'
         });
+        console.log('User set:', firebaseUser.email);
       } else {
         navigate('/');
       }
@@ -42,8 +44,10 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
+        console.log('Fetching streak data for:', user.email);
         const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
         const snap = await getDocs(q);
+        console.log('Streak query result:', snap.empty ? 'empty' : 'found');
         if (snap.empty) return null;
         return { id: snap.docs[0].id, ...snap.docs[0].data() };
       } catch (err) {
@@ -52,7 +56,7 @@ export default function Dashboard() {
       }
     },
     enabled: !!user?.email,
-    retry: 2,
+    retry: 1,
     staleTime: 60000
   });
 
@@ -61,8 +65,10 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return [];
       try {
+        console.log('Fetching progress data for:', user.email);
         const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
         const snap = await getDocs(q);
+        console.log('Progress query result:', snap.docs.length, 'documents');
         return snap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (err) {
         console.error('Progress query error:', err);
@@ -70,7 +76,7 @@ export default function Dashboard() {
       }
     },
     enabled: !!user?.email,
-    retry: 2,
+    retry: 1,
     staleTime: 60000
   });
 
@@ -79,6 +85,7 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
+        console.log('Fetching session data for:', user.email);
         const today = moment().format('YYYY-MM-DD');
         const q = query(
           collection(db, 'DailySession'),
@@ -86,6 +93,7 @@ export default function Dashboard() {
           where('session_date', '==', today)
         );
         const snap = await getDocs(q);
+        console.log('Session query result:', snap.empty ? 'empty' : 'found');
         if (snap.empty) return null;
         return { id: snap.docs[0].id, ...snap.docs[0].data() };
       } catch (err) {
@@ -94,7 +102,7 @@ export default function Dashboard() {
       }
     },
     enabled: !!user?.email,
-    retry: 2,
+    retry: 1,
     staleTime: 60000
   });
 
@@ -154,7 +162,15 @@ export default function Dashboard() {
 
   const getProgressForSubject = (subject) => progressData.find(p => p.subject === subject) || null;
   const isSubjectCompletedToday = (subject) => todaySession?.subjects_completed?.includes(subject) || false;
-  const isLoading = !user || (streakLoading || progressLoading || sessionLoading);
+
+  // Force loading to end after 10 seconds to prevent infinite loading
+  const [forceLoaded, setForceLoaded] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setForceLoaded(true), 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = !user || (!forceLoaded && (streakLoading || progressLoading || sessionLoading));
 
   if (!user) {
     return (
