@@ -20,7 +20,7 @@ export default function Upgrade() {
     return unsub;
   }, [navigate]);
 
-  const handleUpgrade = () => window.open('https://buy.stripe.com/test_4gM4gs3pTczwcBx4wafQI00', '_blank');
+  const handleUpgrade = () => window.open('https://buy.stripe.com/test_cNi14ng1Y6Rmf0468XejK02', '_blank');
 
   return (
     <div className="min-h-screen bg-gray-50">

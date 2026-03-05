@@ -187,7 +187,7 @@ export default function Lesson() {
       <header className={`bg-gradient-to-r ${config.color} text-white sticky top-0 z-50`}>
         <div className="max-w-2xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="text-white hover:bg-white/20 rounded-xl">
+            <Button variant="ghost" size="icon" onClick={() => window.history.back()} className="text-white hover:bg-white/20 rounded-xl">
               <ArrowLeft className="w-6 h-6" />
             </Button>
             <div className="flex items-center gap-3 flex-1">
