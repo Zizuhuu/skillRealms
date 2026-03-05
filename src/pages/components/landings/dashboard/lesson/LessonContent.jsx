@@ -144,6 +144,7 @@ const PHASE_COMPLETE = 'complete';
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
 
 async function generateAILesson(subject, lessonNumber) {
+  console.log('OPENAI_KEY:', import.meta.env.VITE_OPENAI_KEY);
   if (!OPENAI_KEY) return null;
 
   const today = moment().format('YYYY-MM-DD');
