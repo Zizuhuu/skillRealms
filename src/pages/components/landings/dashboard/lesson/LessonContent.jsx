@@ -147,59 +147,51 @@ async function generateAILesson(subject, lessonNumber) {
   console.log('OPENAI_KEY:', import.meta.env.VITE_OPENAI_KEY);
   if (!OPENAI_KEY) return null;
 
-  const today = moment().format('YYYY-MM-DD');
-  const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) return JSON.parse(cached);
+  try {
+    const today = moment().format('YYYY-MM-DD');
+    const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
 
-  const subjectTopics = {
-    math: ['algebra and solving equations', 'geometry and measurement', 'statistics and data analysis', 'ratios, rates, and proportions', 'number sense and word problems'],
-    english: ['reading comprehension and main idea', 'grammar and punctuation rules', 'vocabulary in context', 'essay writing and organization', 'inference and text evidence'],
-    science: ['cell biology and life processes', 'ecosystems and food webs', 'chemistry and states of matter', 'physics forces and motion', 'earth science and environment'],
-    social_studies: ['U.S. Constitution and government branches', 'American founding era', 'Civil War and Reconstruction', 'economics and financial literacy', 'world geography and cultures'],
-    health: ['nutrition and balanced diet', 'mental health and stress management', 'disease prevention and vaccines', 'substance use effects and recovery', 'exercise science and fitness']
-  };
+    const subjectTopics = {
+      math: ['algebra and solving equations', 'geometry and measurement', 'statistics and data analysis', 'ratios, rates, and proportions', 'number sense and word problems'],
+      english: ['reading comprehension and main idea', 'grammar and punctuation rules', 'vocabulary in context', 'essay writing and organization', 'inference and text evidence'],
+      science: ['cell biology and life processes', 'ecosystems and food webs', 'chemistry and states of matter', 'physics forces and motion', 'earth science and environment'],
+      social_studies: ['U.S. Constitution and government branches', 'American founding era', 'Civil War and Reconstruction', 'economics and financial literacy', 'world geography and cultures'],
+      health: ['nutrition and balanced diet', 'mental health and stress management', 'disease prevention and vaccines', 'substance use effects and recovery', 'exercise science and fitness']
+    };
 
-  const topics = subjectTopics[subject] || subjectTopics.math;
-  const topicIndex = (lessonNumber - 1) % topics.length; // Use lessonNumber for consistent topic per lesson
-  const todayTopic = topics[topicIndex];
+    const topics = subjectTopics[subject] || subjectTopics.math;
+    const topicIndex = (lessonNumber - 1) % topics.length; // Use lessonNumber for consistent topic per lesson
+    const todayTopic = topics[topicIndex];
 
-  const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".
+    const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
-This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      })
+    });
 
-Return a JSON object with:
-- "title": a clear specific title (string)
-- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)
-- "questions": array of exactly 5 objects, each with:
-  - "question": a practical real-world scenario question (string)
-  - "options": exactly 4 answer choices (array of strings)
-  - "correct": 0-indexed position of the correct answer (number 0-3)
-  - "explanation": a clear helpful explanation (string)
+    const json = await res.json();
+    const result = JSON.parse(json.choices[0].message.content);
 
-Keep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENAI_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' }
-    })
-  });
-
-  const json = await res.json();
-  const result = JSON.parse(json.choices[0].message.content);
-
-  if (result?.questions?.length > 0) {
-    localStorage.setItem(cacheKey, JSON.stringify(result));
-    return result;
+    if (result?.questions?.length > 0) {
+      localStorage.setItem(cacheKey, JSON.stringify(result));
+      return result;
+    }
+    return null;
+  } catch (err) {
+    console.error('AI lesson generation failed:', err);
+    return null;
   }
-  return null;
 }
 
 export default function LessonContent({ subject, lessonNumber, onComplete, isPro }) {
