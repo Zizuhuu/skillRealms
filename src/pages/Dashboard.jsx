@@ -24,14 +24,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log('Auth state changed:', firebaseUser ? 'user found' : 'no user');
       if (firebaseUser) {
         setUser({
           email: firebaseUser.email,
           full_name: firebaseUser.displayName || '',
           role: 'user'
         });
-        console.log('User set:', firebaseUser.email);
       } else {
         navigate('/');
       }
@@ -44,20 +42,17 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
-        console.log('Fetching streak data for:', user.email);
         const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
         const snap = await getDocs(q);
-        console.log('Streak query result:', snap.empty ? 'empty' : 'found');
         if (snap.empty) return null;
         return { id: snap.docs[0].id, ...snap.docs[0].data() };
       } catch (err) {
-        console.error('Streak query error:', err);
         return null;
       }
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 60000
+    staleTime: 30000
   });
 
   const { data: progressData = [], isLoading: progressLoading } = useQuery({
@@ -65,19 +60,16 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return [];
       try {
-        console.log('Fetching progress data for:', user.email);
         const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
         const snap = await getDocs(q);
-        console.log('Progress query result:', snap.docs.length, 'documents');
         return snap.docs.map(d => ({ id: d.id, ...d.data() }));
       } catch (err) {
-        console.error('Progress query error:', err);
         return [];
       }
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 60000
+    staleTime: 30000
   });
 
   const { data: todaySession, isLoading: sessionLoading } = useQuery({
@@ -85,7 +77,6 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
-        console.log('Fetching session data for:', user.email);
         const today = moment().format('YYYY-MM-DD');
         const q = query(
           collection(db, 'DailySession'),
@@ -93,21 +84,20 @@ export default function Dashboard() {
           where('session_date', '==', today)
         );
         const snap = await getDocs(q);
-        console.log('Session query result:', snap.empty ? 'empty' : 'found');
         if (snap.empty) return null;
         return { id: snap.docs[0].id, ...snap.docs[0].data() };
       } catch (err) {
-        console.error('Session query error:', err);
         return null;
       }
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 60000
+    staleTime: 30000
   });
 
   const initProgressMutation = useMutation({
     mutationFn: async () => {
+      if (!user?.email) return;
       const existingSubjects = progressData.map(p => p.subject);
       const newProgress = SUBJECTS.filter(s => !existingSubjects.includes(s));
       for (const subject of newProgress) {
@@ -135,10 +125,10 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (user?.email && !progressLoading && progressData.length === 0) {
+    if (user?.email && !progressLoading && progressData.length === 0 && !streakLoading) {
       initProgressMutation.mutate();
     }
-  }, [user?.email, progressLoading, progressData.length]);
+  }, [user?.email, progressLoading, progressData.length, streakLoading]);
 
   useEffect(() => {
     if (!user) return;
@@ -162,15 +152,7 @@ export default function Dashboard() {
 
   const getProgressForSubject = (subject) => progressData.find(p => p.subject === subject) || null;
   const isSubjectCompletedToday = (subject) => todaySession?.subjects_completed?.includes(subject) || false;
-
-  // Force loading to end after 10 seconds to prevent infinite loading
-  const [forceLoaded, setForceLoaded] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setForceLoaded(true), 10000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const isLoading = !user || (!forceLoaded && (streakLoading || progressLoading || sessionLoading));
+  const isLoading = !user || (streakLoading || progressLoading || sessionLoading);
 
   if (!user) {
     return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Star } from "lucide-react";
+import { Progress } from '@/components/ui/Progress';
 
 export default function OverallProgress({ progressData }) {
   // Calculate overall progress
