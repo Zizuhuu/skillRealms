@@ -144,11 +144,61 @@ const PHASE_COMPLETE = 'complete';
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
 
 async function generateAILesson(subject, lessonNumber) {
-  console.log('OPENAI_KEY:', import.meta.env.VITE_OPENAI_KEY);
-  // Temporarily disable AI calls due to CORS restrictions in browser environment
-  // In production, this would need a backend proxy
-  console.log('AI lessons disabled due to CORS - using static content');
-  return null;
+  console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber);
+
+  try {
+    const today = moment().format('YYYY-MM-DD');
+    const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      console.log('Using cached AI lesson');
+      return JSON.parse(cached);
+    }
+
+    const subjectTopics = {
+      math: ['algebra and solving equations', 'geometry and measurement', 'statistics and data analysis', 'ratios, rates, and proportions', 'number sense and word problems'],
+      english: ['reading comprehension and main idea', 'grammar and punctuation rules', 'vocabulary in context', 'essay writing and organization', 'inference and text evidence'],
+      science: ['cell biology and life processes', 'ecosystems and food webs', 'chemistry and states of matter', 'physics forces and motion', 'earth science and environment'],
+      social_studies: ['U.S. Constitution and government branches', 'American founding era', 'Civil War and Reconstruction', 'economics and financial literacy', 'world geography and cultures'],
+      health: ['nutrition and balanced diet', 'mental health and stress management', 'disease prevention and vaccines', 'substance use effects and recovery', 'exercise science and fitness']
+    };
+
+    const topics = subjectTopics[subject] || subjectTopics.math;
+    const topicIndex = (lessonNumber - 1) % topics.length;
+    const todayTopic = topics[topicIndex];
+
+    const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
+
+    console.log('Calling proxy server for AI lesson...');
+    const res = await fetch('http://localhost:3001/api/openai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Proxy server error: ${res.status}`);
+    }
+
+    const json = await res.json();
+    const result = JSON.parse(json.choices[0].message.content);
+
+    if (result?.questions?.length > 0) {
+      localStorage.setItem(cacheKey, JSON.stringify(result));
+      console.log('AI lesson generated and cached successfully');
+      return result;
+    }
+    return null;
+  } catch (err) {
+    console.error('AI lesson generation failed:', err);
+    return null;
+  }
 }
 
 export default function LessonContent({ subject, lessonNumber, onComplete, isPro }) {
@@ -194,8 +244,8 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
             <BookOpen className="w-10 h-10 text-white animate-pulse" />
           </div>
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">Loading Lesson Content</h2>
-            <p className="text-gray-500">Preparing your personalized learning experience...</p>
+            <h2 className="text-2xl font-bold text-gray-900">Generating AI Lesson</h2>
+            <p className="text-gray-500">Creating personalized content just for you...</p>
           </div>
           <div className="w-64 h-3 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" style={{ width: '65%' }}></div>
