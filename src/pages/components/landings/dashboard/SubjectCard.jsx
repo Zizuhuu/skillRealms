@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, BookOpen, Calculator, FlaskConical, Globe, Heart } from "lucide-react";
+import { Progress } from '@/components/ui/Progress';
 
 const subjectConfig = {
   math: {

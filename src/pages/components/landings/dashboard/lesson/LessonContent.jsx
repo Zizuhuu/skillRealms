@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, XCircle, ArrowRight, BookOpen, Lightbulb, RefreshCw, Trophy, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Progress } from '@/components/ui/Progress';
 import MotivationalQuote from "@/pages/components/landings/dashboard/lesson/MotivationalQuote.jsx";
 import VideoLesson from "@/pages/components/landings/dashboard/lesson/VideoLesson.jsx";
 import moment from 'moment';
