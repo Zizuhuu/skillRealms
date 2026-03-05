@@ -147,7 +147,7 @@ async function generateAILesson(subject, lessonNumber) {
   if (!OPENAI_KEY) return null;
 
   const today = moment().format('YYYY-MM-DD');
-  const cacheKey = `ai_lesson_${subject}_${today}_${lessonNumber}`;
+  const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) return JSON.parse(cached);
 
@@ -160,10 +160,12 @@ async function generateAILesson(subject, lessonNumber) {
   };
 
   const topics = subjectTopics[subject] || subjectTopics.math;
-  const topicIndex = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0) % topics.length;
+  const topicIndex = (lessonNumber - 1) % topics.length; // Use lessonNumber for consistent topic per lesson
   const todayTopic = topics[topicIndex];
 
-  const prompt = `Create a complete GED lesson for adult learners on: "${todayTopic}".
+  const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".
+
+This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.
 
 Return a JSON object with:
 - "title": a clear specific title (string)
@@ -174,7 +176,7 @@ Return a JSON object with:
   - "correct": 0-indexed position of the correct answer (number 0-3)
   - "explanation": a clear helpful explanation (string)
 
-Keep language at 6th-8th grade reading level. Use real-world examples adults relate to.`;
+Keep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

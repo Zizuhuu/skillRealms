@@ -29,7 +29,7 @@ export default function DailyLessonButton({ canStartLesson, todaySession, timeUn
   const subjectsRemaining = allSubjectsCompleted ? 5 : 5 - (todaySession?.subjects_completed?.length || 0);
   
   return (
-    <Link to={"/Lesson"}>
+    <Link to={"/lesson"}>
       <Button 
         size="lg"
         className="w-full h-20 text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-4"

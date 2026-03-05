@@ -11,7 +11,7 @@ import Upgrade from "@/pages/Upgrade.jsx";
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <Routes future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lesson" element={<Lesson />} />

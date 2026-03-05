@@ -52,7 +52,8 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const { data: progressData = [], isLoading: progressLoading } = useQuery({
@@ -69,7 +70,8 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const { data: todaySession, isLoading: sessionLoading } = useQuery({
@@ -92,7 +94,8 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
     retry: 1,
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const initProgressMutation = useMutation({
