@@ -40,38 +40,62 @@ export default function Dashboard() {
   const { data: streakData, isLoading: streakLoading } = useQuery({
     queryKey: ['userStreak', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (!user?.email) return null;
+      try {
+        const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        console.error('Streak query error:', err);
+        return null;
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const { data: progressData = [], isLoading: progressLoading } = useQuery({
     queryKey: ['learningProgress', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!user?.email) return [];
+      try {
+        const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (err) {
+        console.error('Progress query error:', err);
+        return [];
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const { data: todaySession, isLoading: sessionLoading } = useQuery({
     queryKey: ['dailySession', user?.email],
     queryFn: async () => {
-      const today = moment().format('YYYY-MM-DD');
-      const q = query(
-        collection(db, 'DailySession'),
-        where('user_email', '==', user.email),
-        where('session_date', '==', today)
-      );
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (!user?.email) return null;
+      try {
+        const today = moment().format('YYYY-MM-DD');
+        const q = query(
+          collection(db, 'DailySession'),
+          where('user_email', '==', user.email),
+          where('session_date', '==', today)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        console.error('Session query error:', err);
+        return null;
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const initProgressMutation = useMutation({
@@ -130,7 +154,18 @@ export default function Dashboard() {
 
   const getProgressForSubject = (subject) => progressData.find(p => p.subject === subject) || null;
   const isSubjectCompletedToday = (subject) => todaySession?.subjects_completed?.includes(subject) || false;
-  const isLoading = streakLoading || progressLoading || sessionLoading || !user;
+  const isLoading = !user || (streakLoading || progressLoading || sessionLoading);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

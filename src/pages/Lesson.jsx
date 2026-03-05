@@ -51,23 +51,39 @@ export default function Lesson() {
   const { data: todaySession } = useQuery({
     queryKey: ['dailySession', user?.email],
     queryFn: async () => {
-      const today = moment().format('YYYY-MM-DD');
-      const q = query(collection(db, 'DailySession'), where('user_email', '==', user.email), where('session_date', '==', today));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (!user?.email) return null;
+      try {
+        const today = moment().format('YYYY-MM-DD');
+        const q = query(collection(db, 'DailySession'), where('user_email', '==', user.email), where('session_date', '==', today));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        console.error('Daily session query error:', err);
+        return null;
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const { data: progressData = [] } = useQuery({
     queryKey: ['learningProgress', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!user?.email) return [];
+      try {
+        const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (err) {
+        console.error('Learning progress query error:', err);
+        return [];
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   useEffect(() => {

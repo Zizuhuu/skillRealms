@@ -24,32 +24,56 @@ export default function Profile() {
   const { data: streak } = useQuery({
     queryKey: ['userStreak', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      if (snap.empty) return null;
-      return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      if (!user?.email) return null;
+      try {
+        const q = query(collection(db, 'UserStreak'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        console.error('Streak query error:', err);
+        return null;
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const { data: progressData = [] } = useQuery({
     queryKey: ['learningProgress', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!user?.email) return [];
+      try {
+        const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (err) {
+        console.error('Progress query error:', err);
+        return [];
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['allSessions', user?.email],
     queryFn: async () => {
-      const q = query(collection(db, 'DailySession'), where('user_email', '==', user.email));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.session_date.localeCompare(a.session_date)).slice(0, 30);
+      if (!user?.email) return [];
+      try {
+        const q = query(collection(db, 'DailySession'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.session_date.localeCompare(a.session_date)).slice(0, 30);
+      } catch (err) {
+        console.error('Sessions query error:', err);
+        return [];
+      }
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
   });
 
   const handleLogout = async () => { await signOut(auth); navigate('/'); };
