@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "@/pages/Home.jsx";
 import Dashboard from "@/pages/Dashboard.jsx";
 import Lesson from "@/pages/Lesson.jsx";
@@ -11,8 +11,8 @@ import RealmPad from "@/pages/RealmPad.jsx";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <HashRouter>
+      <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lesson" element={<Lesson />} />
@@ -24,6 +24,6 @@ export default function App() {
         <Route path="/realmpad" element={<RealmPad />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }

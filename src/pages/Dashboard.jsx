@@ -192,6 +192,11 @@ export default function Dashboard() {
             <span className="text-xl font-bold text-gray-900">skillRealms</span>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/realmpad">
+              <Button variant="outline" className="rounded-2xl px-4 py-2 text-sm font-semibold">
+                RealmPad
+              </Button>
+            </Link>
             <Link to="/profile">
               <Button variant="ghost" size="icon" className="rounded-xl">
                 <Settings className="w-5 h-5 text-gray-600" />

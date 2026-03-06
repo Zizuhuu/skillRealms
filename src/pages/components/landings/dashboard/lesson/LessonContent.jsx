@@ -171,7 +171,7 @@ async function generateAILesson(subject, lessonNumber) {
     const todayTopic = topics[topicIndex];
 
     if (!OPENAI_KEY) {
-      console.warn('OpenAI key is missing. Set VITE_OPENAI_KEY in your .env file and restart the dev server. Falling back to local content.');
+      // OpenAI key not configured; proceed with local fallback content.
       return null;
     }
 
