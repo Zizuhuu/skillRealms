@@ -146,6 +146,21 @@ const PHASE_COMPLETE = 'complete';
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
 const OPENAI_PROXY_URL = import.meta.env.VITE_OPENAI_PROXY_URL || '/api/openai';
 
+let serverOpenAIKeyAvailable = null;
+async function checkServerOpenAIKey() {
+  if (serverOpenAIKeyAvailable !== null) return serverOpenAIKeyAvailable;
+
+  try {
+    const res = await fetch(OPENAI_PROXY_URL, { method: 'GET' });
+    const data = await res.json();
+    serverOpenAIKeyAvailable = Boolean(data?.hasKey);
+  } catch {
+    serverOpenAIKeyAvailable = false;
+  }
+
+  return serverOpenAIKeyAvailable;
+}
+
 function getStoredOpenAIKey() {
   try {
     return localStorage.getItem('OPENAI_KEY');
@@ -187,14 +202,15 @@ async function generateAILesson(subject, lessonNumber, overrideKey) {
     const topicIndex = (lessonNumber - 1) % topics.length;
     const todayTopic = topics[topicIndex];
 
-    if (!key) {
-      // No key configured; fallback to local content.
+    const canUseProxy = await checkServerOpenAIKey();
+    const useProxy = canUseProxy;
+    if (!useProxy && !key) {
+      // No OpenAI key available anywhere; fallback to local content.
       return null;
     }
 
     const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
-    const useProxy = Boolean(OPENAI_KEY);
     const endpoint = useProxy ? OPENAI_PROXY_URL : 'https://api.openai.com/v1/chat/completions';
     const headers = {
       'Content-Type': 'application/json',
