@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      // Keep API routes working; don’t rewrite them to index.html
+
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }
