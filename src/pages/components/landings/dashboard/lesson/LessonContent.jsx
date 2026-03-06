@@ -143,7 +143,6 @@ const PHASE_COMPLETE = 'complete';
 // VITE_OPENAI_KEY=sk-your-key-here
 // Optionally, you can set a proxy URL (defaults to /api/openai):
 // VITE_OPENAI_PROXY_URL=http://localhost:3001/api/openai
-const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
 const OPENAI_PROXY_URL = import.meta.env.VITE_OPENAI_PROXY_URL || '/api/openai';
 
 let serverOpenAIKeyAvailable = null;
@@ -161,32 +160,12 @@ async function checkServerOpenAIKey() {
   return serverOpenAIKeyAvailable;
 }
 
-function getStoredOpenAIKey() {
-  try {
-    return localStorage.getItem('OPENAI_KEY');
-  } catch {
-    return null;
-  }
-}
-
-function setStoredOpenAIKey(key) {
-  try {
-    localStorage.setItem('OPENAI_KEY', key);
-  } catch {
-    // ignore
-  }
-}
-
-async function generateAILesson(subject, lessonNumber, overrideKey) {
-  const key = overrideKey || getStoredOpenAIKey();
-  console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber, 'key:', Boolean(key));
-
+async function generateAILesson(subject, lessonNumber) {
   try {
     const today = moment().format('YYYY-MM-DD');
     const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
-      console.log('Using cached AI lesson');
       return JSON.parse(cached);
     }
 
@@ -203,23 +182,17 @@ async function generateAILesson(subject, lessonNumber, overrideKey) {
     const todayTopic = topics[topicIndex];
 
     const canUseProxy = await checkServerOpenAIKey();
-    const useProxy = canUseProxy;
-    if (!useProxy && !key) {
-      // No OpenAI key available anywhere; fallback to local content.
-      return null;
+    if (!canUseProxy) {
+      throw new Error('OpenAI key not configured on server');
     }
 
     const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
-    const endpoint = useProxy ? OPENAI_PROXY_URL : 'https://api.openai.com/v1/chat/completions';
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(useProxy ? {} : { Authorization: `Bearer ${key}` })
-    };
-
-    const res = await fetch(endpoint, {
+    const res = await fetch(OPENAI_PROXY_URL, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
@@ -236,21 +209,18 @@ async function generateAILesson(subject, lessonNumber, overrideKey) {
 
     if (result?.questions?.length > 0) {
       localStorage.setItem(cacheKey, JSON.stringify(result));
-      console.log('AI lesson generated and cached successfully');
       return result;
     }
     return null;
   } catch (err) {
-    console.error('AI lesson generation failed:', err);
-    return null;
+    throw err;
   }
 }
 
 export default function LessonContent({ subject, lessonNumber, onComplete, isPro }) {
   const [aiLesson, setAiLesson] = useState(null);
   const [aiLoading, setAiLoading] = useState(true);
-  const [aiKey, setAiKey] = useState(getStoredOpenAIKey() || '');
-  const [aiSaved, setAiSaved] = useState(Boolean(getStoredOpenAIKey()));
+  const [aiError, setAiError] = useState(null);
   const [phase, setPhase] = useState(PHASE_LESSON);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -276,11 +246,18 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     setAiLesson(null);
     setAiLoading(true);
 
-    generateAILesson(subject, lessonNumber, aiSaved ? aiKey : null).then(result => {
-      setAiLesson(result);
-      setAiLoading(false);
-    });
-  }, [subject, lessonNumber, aiSaved, aiKey]);
+    generateAILesson(subject, lessonNumber)
+      .then(result => {
+        setAiLesson(result);
+        setAiError(null);
+      })
+      .catch(err => {
+        console.error('Lesson load failed:', err);
+        setAiError(err?.message || 'Failed to load lesson');
+        setAiLesson(null);
+      })
+      .finally(() => setAiLoading(false));
+  }, [subject, lessonNumber]);
 
   if (aiLoading) {
     return (
@@ -291,8 +268,8 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
             <BookOpen className="w-10 h-10 text-white animate-pulse" />
           </div>
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">Generating AI Lesson</h2>
-            <p className="text-gray-500">Creating personalized content just for you...</p>
+            <h2 className="text-2xl font-bold text-gray-900">Loading lesson</h2>
+            <p className="text-gray-500">Hang tight while we prepare your study session.</p>
           </div>
           <div className="w-64 h-3 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" style={{ width: '65%' }}></div>
@@ -302,14 +279,40 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     );
   }
 
-  const data = aiLesson || lessonDatabase[subject] || lessonDatabase.math;
-  const aiUnavailable = !aiLoading && !aiLesson;
-  const questions = data.questions || [];
+  if (aiError) {
+    return (
+      <div className="space-y-6">
+        <MotivationalQuote />
+        <div className="flex flex-col items-center justify-center py-16 space-y-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg">
+            <BookOpen className="w-10 h-10 text-white" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-gray-900">Lesson unavailable</h2>
+            <p className="text-gray-500">We couldn’t load the lesson right now. Please try again.</p>
+            <p className="text-sm text-gray-400">{aiError}</p>
+          </div>
+          <Button onClick={() => {
+            setAiLoading(true);
+            setAiError(null);
+            generateAILesson(subject, lessonNumber)
+              .then(result => setAiLesson(result))
+              .catch(err => setAiError(err?.message || 'Failed to load lesson'))
+              .finally(() => setAiLoading(false));
+          }} className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const data = aiLesson;
+  const questions = data?.questions || [];
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
   const progressPct = showReading ? 5 : Math.round(((questionIndex + 1) / totalQuestions) * 95);
-  const canShowKeyInput = !OPENAI_KEY;
 
   const handleCheckAnswer = () => {
     setShowResult(true);
@@ -347,35 +350,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
         <MotivationalQuote />
         {aiUnavailable && (
           <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
-            AI lesson is unavailable. Showing standard content instead.
-            {canShowKeyInput && (
-              <div className="mt-3">
-                <p className="font-semibold">Want AI-generated lessons?</p>
-                <p className="mt-1">Enter your OpenAI key below and tap Save. It will be stored locally in your browser.</p>
-                <div className="mt-3 flex flex-col gap-2">
-                  <input
-                    value={aiKey}
-                    onChange={e => setAiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2"
-                  />
-                  <Button
-                    onClick={() => {
-                      setStoredOpenAIKey(aiKey);
-                      setAiSaved(true);
-                      setAiLoading(true);
-                      generateAILesson(subject, lessonNumber, aiKey).then(result => {
-                        setAiLesson(result);
-                        setAiLoading(false);
-                      });
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
-                  >
-                    Save & Generate AI Lesson
-                  </Button>
-                </div>
-              </div>
-            )}
+            Lesson content is loading from the standard library.
           </div>
         )}
         <div className="space-y-2">
