@@ -1,12 +1,21 @@
 export default async function handler(req, res) {
   const OPENAI_KEY = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY;
 
+  // Basic CORS support for cross-origin dev setups
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method === 'GET') {
     return res.status(200).json({ ok: Boolean(OPENAI_KEY), hasKey: Boolean(OPENAI_KEY) });
   }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'GET, POST');
+    res.setHeader('Allow', 'GET, POST, OPTIONS');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 

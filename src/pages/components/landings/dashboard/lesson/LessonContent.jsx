@@ -178,7 +178,7 @@ function setStoredOpenAIKey(key) {
 }
 
 async function generateAILesson(subject, lessonNumber, overrideKey) {
-  const key = overrideKey || OPENAI_KEY || getStoredOpenAIKey();
+  const key = overrideKey || getStoredOpenAIKey();
   console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber, 'key:', Boolean(key));
 
   try {
