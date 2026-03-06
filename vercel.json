@@ -1,7 +1,6 @@
 {
   "rewrites": [
     {
-"sfjhsjdhfjsdhfkjshdkfjhsdkf"
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }
