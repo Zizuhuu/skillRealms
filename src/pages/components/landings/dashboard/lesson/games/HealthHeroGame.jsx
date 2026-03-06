@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, Heart, Shield } from 'lucide-react';
 
 const scenarios = [
@@ -99,6 +99,12 @@ export default function HealthHeroGame() {
       </Button>
     </div>
   );
+
+  useEffect(() => {
+    if (phase === 'gameover' && health >= 80 && energy >= 80) {
+      try { localStorage.setItem('game_health_hero_perfect', '1'); } catch {};
+    }
+  }, [phase, health, energy]);
 
   if (phase === 'gameover') {
     const { label, color } = getHealthLabel();

@@ -7,6 +7,7 @@ import Courses from "@/pages/Courses.jsx";
 import Profile from "@/pages/Profile.jsx";
 import Resources from "@/pages/Resources.jsx";
 import Upgrade from "@/pages/Upgrade.jsx";
+import RealmPad from "@/pages/RealmPad.jsx";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/realmpad" element={<RealmPad />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

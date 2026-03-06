@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { BookOpen, Calendar, Award, Clock } from "lucide-react";
 
 const features = [
@@ -55,6 +56,12 @@ export default function FeaturesSection() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link to="/realmpad" className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-6 py-3 text-white font-semibold shadow-sm hover:bg-indigo-700">
+            Learn more about RealmPad
+          </Link>
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 
 const scenarios = [
@@ -91,6 +91,12 @@ export default function StartItUpGame() {
   const restart = () => {
     setPhase('start'); setScenarioIdx(0); setCash(500); setRep(5); setRevenue(350); setLastResult(null); setChosen(null);
   };
+
+  useEffect(() => {
+    if (phase === 'win' && cash >= 800 && rep >= 8) {
+      try { localStorage.setItem('game_start_it_up_perfect', '1'); } catch {};
+    }
+  }, [phase, cash, rep]);
 
   if (phase === 'start') return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 text-center space-y-6">

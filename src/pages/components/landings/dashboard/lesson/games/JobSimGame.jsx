@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, TrendingUp, TrendingDown } from 'lucide-react';
 
 const scenarios = [
@@ -111,6 +111,12 @@ export default function JobSimGame() {
       </Button>
     </div>
   );
+
+  useEffect(() => {
+    if (phase === 'done' && totalScore >= maxScore) {
+      try { localStorage.setItem('game_job_sim_perfect', '1'); } catch {};
+    }
+  }, [phase, totalScore, maxScore]);
 
   if (phase === 'done') {
     const grade = getGrade();

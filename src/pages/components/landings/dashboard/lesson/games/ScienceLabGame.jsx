@@ -51,6 +51,11 @@ export default function ScienceLabGame() {
       const hs = Math.max(score, highScore);
       setHighScore(hs);
       localStorage.setItem('sciencelab_hs', hs.toString());
+
+      // Mark perfect if the score is high (all correct and fast)
+      if (score >= 1400) {
+        try { localStorage.setItem('game_science_lab_perfect', '1'); } catch {};
+      }
     }
   }, [phase]);
 

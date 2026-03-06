@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Trophy, CheckCircle2, XCircle } from 'lucide-react';
 
 const questions = [
@@ -103,6 +103,12 @@ export default function DesignChallengeGame() {
   };
 
   const restart = () => { setPhase('start'); setIdx(0); setSelected(null); setScore(0); };
+
+  useEffect(() => {
+    if (phase === 'done' && score === questions.length) {
+      try { localStorage.setItem('game_design_challenge_perfect', '1'); } catch {};
+    }
+  }, [phase, score]);
 
   if (phase === 'start') return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-8 text-center space-y-6">

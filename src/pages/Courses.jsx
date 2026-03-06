@@ -55,7 +55,7 @@ function CourseCard({ course, isProCourse }) {
             </div>
           </div>
           {isProCourse ? (
-            <Link to="/upgrade"><Button className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-12"><Lock className="w-4 h-4 mr-2" /> Unlock with Pro — $4.99/mo</Button></Link>
+            <Link to="/upgrade"><Button className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-12"><Lock className="w-4 h-4 mr-2" /> Unlock with Pro — $5.99/mo</Button></Link>
           ) : (
             <Link to={`/lesson?subject=${course.id}`}><Button className={`w-full bg-gradient-to-r ${course.color} text-white rounded-xl h-12 hover:opacity-90`}><Play className="w-4 h-4 mr-2 fill-white" /> Start Learning</Button></Link>
           )}
@@ -89,7 +89,7 @@ export default function Courses() {
           <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-5 flex items-center gap-4 shadow-md hover:shadow-lg transition-shadow">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl">⭐</div>
             <div className="flex-1"><p className="text-white font-bold text-lg">Unlock All Pro Courses + Games</p><p className="text-purple-200 text-sm">Coding, finance, art, unlimited drills & more</p></div>
-            <span className="text-white font-semibold text-sm bg-white/20 px-3 py-1 rounded-xl">$4.99/mo →</span>
+            <span className="text-white font-semibold text-sm bg-white/20 px-3 py-1 rounded-xl">$5.99/mo →</span>
           </div>
         </Link>
       </main>

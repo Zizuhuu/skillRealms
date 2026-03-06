@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/Button';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Trophy, Clock } from 'lucide-react';
 
 const questions = [
@@ -33,13 +33,20 @@ export default function CivicsQuestGame() {
     if (i === current.answer) setScore(s => s + current.points);
   };
 
+  const maxPoints = useMemo(() => shuffled.reduce((sum, q) => sum + q.points, 0), [shuffled]);
+
   const next = () => {
     if (idx + 1 >= shuffled.length) {
-      const hs = Math.max(score + (chosen === current.answer ? 0 : 0), highScore);
       const finalScore = score;
       const finalHs = Math.max(finalScore, highScore);
       setHighScore(finalHs);
       localStorage.setItem('civicsquest_hs', finalHs.toString());
+
+      // Mark perfect if max score achieved
+      if (finalScore === maxPoints) {
+        try { localStorage.setItem('game_civics_quest_perfect', '1'); } catch {};
+      }
+
       setPhase('gameover');
     } else {
       setIdx(i => i + 1);

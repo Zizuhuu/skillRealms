@@ -20,7 +20,7 @@ export default function Upgrade() {
     return unsub;
   }, [navigate]);
 
-  const handleUpgrade = () => window.open('https://buy.stripe.com/test_cNi14ng1Y6Rmf0468XejK02', '_blank');
+  const handleUpgrade = () => window.open('https://buy.stripe.com/test_3cIeVd2gFavbbOH3SUcwg01', '_blank');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -35,12 +35,12 @@ export default function Upgrade() {
           <div className="w-16 h-16 bg-white/20 rounded-2xl mx-auto flex items-center justify-center"><Star className="w-10 h-10 text-yellow-300" /></div>
           <h2 className="text-3xl font-bold">skillRealms Pro</h2>
           <p className="text-purple-100 text-lg">Everything you need to pass your GED faster</p>
-          <div className="mt-2"><span className="text-5xl font-bold">$4.99</span><span className="text-purple-200 text-xl">/month</span></div>
+          <div className="mt-2"><span className="text-5xl font-bold">$5.99</span><span className="text-purple-200 text-xl">/month</span></div>
           <p className="text-purple-200 text-sm">Cancel anytime. No contracts.</p>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Card className="border border-gray-200"><CardContent className="p-5"><div className="text-center mb-4"><h3 className="text-lg font-bold text-gray-700">Free</h3><p className="text-2xl font-bold text-gray-900">$0</p></div><div className="space-y-2">{FREE_FEATURES.map((f, i) => <div key={i} className="flex items-start gap-2"><Check className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-600">{f}</span></div>)}</div></CardContent></Card>
-          <Card className="border-2 border-purple-500 relative"><div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</div><CardContent className="p-5"><div className="text-center mb-4"><h3 className="text-lg font-bold text-purple-700">Pro</h3><p className="text-2xl font-bold text-gray-900">$4.99</p></div><div className="space-y-2">{PRO_FEATURES.slice(0, 6).map((f, i) => <div key={i} className="flex items-start gap-2"><Check className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-700 font-medium">{f}</span></div>)}</div></CardContent></Card>
+          <Card className="border-2 border-purple-500 relative"><div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</div><CardContent className="p-5"><div className="text-center mb-4"><h3 className="text-lg font-bold text-purple-700">Pro</h3><p className="text-2xl font-bold text-gray-900">$5.99</p></div><div className="space-y-2">{PRO_FEATURES.slice(0, 6).map((f, i) => <div key={i} className="flex items-start gap-2"><Check className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" /><span className="text-sm text-gray-700 font-medium">{f}</span></div>)}</div></CardContent></Card>
         </div>
         <div className="space-y-4">
           {[

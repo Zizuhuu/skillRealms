@@ -273,7 +273,7 @@ export default function Dashboard() {
               <p className="text-white font-bold text-lg">Upgrade to Pro</p>
               <p className="text-purple-200 text-sm">Unlimited drills, deeper explanations & more</p>
             </div>
-            <span className="text-white font-semibold text-sm bg-white/20 px-3 py-1 rounded-xl">$4.99/mo →</span>
+            <span className="text-white font-semibold text-sm bg-white/20 px-3 py-1 rounded-xl">$5.99/mo →</span>
           </div>
         </Link>
       </main>

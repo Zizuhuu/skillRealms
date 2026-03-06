@@ -141,7 +141,10 @@ const PHASE_COMPLETE = 'complete';
 // ---- REPLACE THIS with your actual OpenAI key in .env ----
 // Create a file called .env in your project root with:
 // VITE_OPENAI_KEY=sk-your-key-here
+// Optionally, you can set a proxy URL (defaults to /api/openai):
+// VITE_OPENAI_PROXY_URL=http://localhost:3001/api/openai
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
+const OPENAI_PROXY_URL = import.meta.env.VITE_OPENAI_PROXY_URL || '/api/openai';
 
 async function generateAILesson(subject, lessonNumber) {
   console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber);
@@ -167,10 +170,15 @@ async function generateAILesson(subject, lessonNumber) {
     const topicIndex = (lessonNumber - 1) % topics.length;
     const todayTopic = topics[topicIndex];
 
+    if (!OPENAI_KEY) {
+      console.warn('OpenAI key is missing. Set VITE_OPENAI_KEY in your .env file and restart the dev server. Falling back to local content.');
+      return null;
+    }
+
     const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
     console.log('Calling proxy server for AI lesson...');
-    const res = await fetch('http://localhost:3001/api/openai', {
+    const res = await fetch(OPENAI_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -256,6 +264,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   }
 
   const data = aiLesson || lessonDatabase[subject] || lessonDatabase.math;
+  const aiUnavailable = !aiLoading && !aiLesson;
   const questions = data.questions || [];
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
@@ -296,6 +305,11 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     return (
       <div className="space-y-6">
         <MotivationalQuote />
+        {aiUnavailable && (
+          <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
+            AI lesson is unavailable. Showing standard content instead. To enable AI, set <code>VITE_OPENAI_KEY</code> in your .env and run the app with the proxy server.
+          </div>
+        )}
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-gray-500">
             <span>Study Material</span>
@@ -429,7 +443,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-4 text-left">
               <div className="flex items-center gap-2 mb-2"><Star className="w-5 h-5 text-purple-500" /><span className="font-semibold text-purple-800">Want unlimited practice?</span></div>
               <p className="text-sm text-gray-600 mb-3">Pro members get unlimited lessons, personalized content, and more.</p>
-              <Link to="/upgrade"><Button className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-10">Upgrade to Pro — $4.99/mo →</Button></Link>
+              <Link to="/upgrade"><Button className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-10">Upgrade to Pro — $5.99/mo →</Button></Link>
             </div>
             <Button onClick={onComplete} size="lg" className="w-full h-14 text-xl font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">Mark Complete & Continue</Button>
           </CardContent>

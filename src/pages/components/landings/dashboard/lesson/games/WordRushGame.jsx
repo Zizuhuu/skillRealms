@@ -51,6 +51,11 @@ export default function WordRushGame() {
       const hs = Math.max(score, highScore);
       setHighScore(hs);
       localStorage.setItem('wordrush_hs', hs.toString());
+
+      // Mark perfect if the score is high enough (all correct + fast)
+      if (score >= 1200) {
+        try { localStorage.setItem('game_word_rush_perfect', '1'); } catch {};
+      }
     }
   }, [phase]);
 

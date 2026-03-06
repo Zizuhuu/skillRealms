@@ -7,7 +7,7 @@ import {
   updateProfile,
   sendEmailVerification
 } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function HeroSection() {
   const [mode, setMode] = useState('choose');
@@ -78,6 +78,11 @@ export default function HeroSection() {
               <p className="font-semibold text-gray-800 text-lg">Get started for free</p>
               <button onClick={() => setMode('register')} className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-colors">Create Account</button>
               <button onClick={() => setMode('login')} className="w-full h-14 text-lg font-semibold border-2 border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors">Sign In</button>
+              <div className="text-center mt-2">
+                <Link to="/realmpad" className="text-sm font-medium text-blue-600 hover:underline">
+                  Want the RealmPad app? Learn more →
+                </Link>
+              </div>
             </div>
           )}
 

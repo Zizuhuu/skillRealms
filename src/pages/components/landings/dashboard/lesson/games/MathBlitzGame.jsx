@@ -78,6 +78,11 @@ export default function MathBlitzGame() {
     const hs = Math.max(score, highScore);
     setHighScore(hs);
     localStorage.setItem('mathblitz_hs', hs.toString());
+
+    // Mark perfect if player reached a high score threshold
+    if (score >= 1200) {
+      try { localStorage.setItem('game_math_blitz_perfect', '1'); } catch {};
+    }
   };
 
   useEffect(() => { if (phase === 'gameover') handleGameOver(); }, [phase]);
