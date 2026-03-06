@@ -146,8 +146,25 @@ const PHASE_COMPLETE = 'complete';
 const OPENAI_KEY = import.meta.env.VITE_OPENAI_KEY;
 const OPENAI_PROXY_URL = import.meta.env.VITE_OPENAI_PROXY_URL || '/api/openai';
 
-async function generateAILesson(subject, lessonNumber) {
-  console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber);
+function getStoredOpenAIKey() {
+  try {
+    return localStorage.getItem('OPENAI_KEY');
+  } catch {
+    return null;
+  }
+}
+
+function setStoredOpenAIKey(key) {
+  try {
+    localStorage.setItem('OPENAI_KEY', key);
+  } catch {
+    // ignore
+  }
+}
+
+async function generateAILesson(subject, lessonNumber, overrideKey) {
+  const key = overrideKey || OPENAI_KEY || getStoredOpenAIKey();
+  console.log('Generating AI lesson for:', subject, 'lesson:', lessonNumber, 'key:', Boolean(key));
 
   try {
     const today = moment().format('YYYY-MM-DD');
@@ -170,19 +187,23 @@ async function generateAILesson(subject, lessonNumber) {
     const topicIndex = (lessonNumber - 1) % topics.length;
     const todayTopic = topics[topicIndex];
 
-    if (!OPENAI_KEY) {
-      // OpenAI key not configured; proceed with local fallback content.
+    if (!key) {
+      // No key configured; fallback to local content.
       return null;
     }
 
     const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
 
-    console.log('Calling proxy server for AI lesson...');
-    const res = await fetch(OPENAI_PROXY_URL, {
+    const useProxy = Boolean(OPENAI_KEY);
+    const endpoint = useProxy ? OPENAI_PROXY_URL : 'https://api.openai.com/v1/chat/completions';
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(useProxy ? {} : { Authorization: `Bearer ${key}` })
+    };
+
+    const res = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
@@ -191,7 +212,7 @@ async function generateAILesson(subject, lessonNumber) {
     });
 
     if (!res.ok) {
-      throw new Error(`Proxy server error: ${res.status}`);
+      throw new Error(`AI request failed: ${res.status}`);
     }
 
     const json = await res.json();
@@ -212,6 +233,8 @@ async function generateAILesson(subject, lessonNumber) {
 export default function LessonContent({ subject, lessonNumber, onComplete, isPro }) {
   const [aiLesson, setAiLesson] = useState(null);
   const [aiLoading, setAiLoading] = useState(true);
+  const [aiKey, setAiKey] = useState(getStoredOpenAIKey() || '');
+  const [aiSaved, setAiSaved] = useState(Boolean(getStoredOpenAIKey()));
   const [phase, setPhase] = useState(PHASE_LESSON);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -237,11 +260,11 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     setAiLesson(null);
     setAiLoading(true);
 
-    generateAILesson(subject, lessonNumber).then(result => {
+    generateAILesson(subject, lessonNumber, aiSaved ? aiKey : null).then(result => {
       setAiLesson(result);
       setAiLoading(false);
     });
-  }, [subject]);
+  }, [subject, lessonNumber, aiSaved, aiKey]);
 
   if (aiLoading) {
     return (
@@ -270,6 +293,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
   const progressPct = showReading ? 5 : Math.round(((questionIndex + 1) / totalQuestions) * 95);
+  const canShowKeyInput = !OPENAI_KEY;
 
   const handleCheckAnswer = () => {
     setShowResult(true);
@@ -307,7 +331,35 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
         <MotivationalQuote />
         {aiUnavailable && (
           <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
-            AI lesson is unavailable. Showing standard content instead. To enable AI, set <code>VITE_OPENAI_KEY</code> in your .env and run the app with the proxy server.
+            AI lesson is unavailable. Showing standard content instead.
+            {canShowKeyInput && (
+              <div className="mt-3">
+                <p className="font-semibold">Want AI-generated lessons?</p>
+                <p className="mt-1">Enter your OpenAI key below and tap Save. It will be stored locally in your browser.</p>
+                <div className="mt-3 flex flex-col gap-2">
+                  <input
+                    value={aiKey}
+                    onChange={e => setAiKey(e.target.value)}
+                    placeholder="sk-..."
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2"
+                  />
+                  <Button
+                    onClick={() => {
+                      setStoredOpenAIKey(aiKey);
+                      setAiSaved(true);
+                      setAiLoading(true);
+                      generateAILesson(subject, lessonNumber, aiKey).then(result => {
+                        setAiLesson(result);
+                        setAiLoading(false);
+                      });
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                  >
+                    Save & Generate AI Lesson
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
         <div className="space-y-2">

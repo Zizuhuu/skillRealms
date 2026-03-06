@@ -1,4 +1,5 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import { Tablet } from "lucide-react";
 import Home from "@/pages/Home.jsx";
 import Dashboard from "@/pages/Dashboard.jsx";
 import Lesson from "@/pages/Lesson.jsx";
@@ -24,6 +25,15 @@ export default function App() {
         <Route path="/realmpad" element={<RealmPad />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+
+      {/* Always-visible RealmPad button (tablet-style) */}
+      <Link
+        to="/realmpad"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-white shadow-lg hover:bg-indigo-700 transition"
+      >
+        <Tablet className="w-5 h-5" />
+        <span className="hidden sm:inline">RealmPad</span>
+      </Link>
     </HashRouter>
   )
 }
