@@ -145,9 +145,11 @@ export default function Lesson() {
       queryClient.invalidateQueries(['dailySession']);
       queryClient.invalidateQueries(['learningProgress']);
       queryClient.invalidateQueries(['userStreak']);
-      const nextIndex = currentSubjectIndex + 1;
-      if (nextIndex >= SUBJECTS.length) setShowCompletion(true);
-      else setCurrentSubjectIndex(nextIndex);
+      // Set last lesson date for free web
+      const today = moment().format('YYYY-MM-DD');
+      localStorage.setItem(`last_lesson_${user.email}`, today);
+      // Navigate to free web
+      navigate('/freeweb');
     }
   });
 

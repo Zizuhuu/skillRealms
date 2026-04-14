@@ -163,7 +163,7 @@ async function checkServerOpenAIKey() {
 async function generateAILesson(subject, lessonNumber) {
   try {
     const today = moment().format('YYYY-MM-DD');
-    const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}`;
+    const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}_${today}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       return JSON.parse(cached);
@@ -178,7 +178,8 @@ async function generateAILesson(subject, lessonNumber) {
     };
 
     const topics = subjectTopics[subject] || subjectTopics.math;
-    const topicIndex = (lessonNumber - 1) % topics.length;
+    const dayOfYear = moment().dayOfYear();
+    const topicIndex = (lessonNumber - 1 + dayOfYear) % topics.length; // Vary by day
     const todayTopic = topics[topicIndex];
 
     const canUseProxy = await checkServerOpenAIKey();
@@ -186,7 +187,9 @@ async function generateAILesson(subject, lessonNumber) {
       throw new Error('OpenAI key not configured on server');
     }
 
-    const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}".\n\nThis is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building.`;
+    const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}". Today's date is ${today}. Make this lesson unique for today by incorporating current events, seasonal themes, or daily relevance where appropriate.
+
+This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building. Ensure the content is fresh and relevant for today's date.`;
 
     const res = await fetch(OPENAI_PROXY_URL, {
       method: 'POST',

@@ -1,0 +1,247 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { auth, db } from '../../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock } from 'lucide-react';
+import moment from 'moment';
+
+export default function FreeWeb() {
+  const [user, setUser] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [isActive, setIsActive] = useState(true);
+  const [currentTab, setCurrentTab] = useState('youtube');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) setUser({ email: firebaseUser.email, full_name: firebaseUser.displayName || '' });
+      else navigate('/');
+    });
+    return unsub;
+  }, [navigate]);
+
+  const { data: progressData = [] } = useQuery({
+    queryKey: ['learningProgress', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      try {
+        const q = query(collection(db, 'LearningProgress'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (err) {
+        return [];
+      }
+    },
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
+  });
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      try {
+        const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        return null;
+      }
+    },
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
+  });
+
+  const isGEDComplete = progressData.every(p => p.current_lesson > 30);
+  const isPro = userProfile?.is_pro || false;
+  const freeWebDuration = isPro ? 3600 : 900; // 1 hour or 15 min in seconds
+
+  useEffect(() => {
+    if (!user) return;
+
+    const today = moment().format('YYYY-MM-DD');
+    const lastLessonDate = localStorage.getItem(`last_lesson_${user.email}`);
+    const freeWebEnd = localStorage.getItem(`free_web_end_${user.email}`);
+
+    if (lastLessonDate === today && freeWebEnd) {
+      const endTime = moment(freeWebEnd);
+      const now = moment();
+      if (now.isBefore(endTime)) {
+        setTimeLeft(endTime.diff(now, 'seconds'));
+        setIsActive(true);
+      } else {
+        setTimeLeft(0);
+        setIsActive(false);
+      }
+    } else if (lastLessonDate === today) {
+      // Just completed a lesson today, start free web
+      const endTime = moment().add(freeWebDuration, 'seconds');
+      localStorage.setItem(`free_web_end_${user.email}`, endTime.toISOString());
+      setTimeLeft(freeWebDuration);
+      setIsActive(true);
+    } else {
+      setTimeLeft(0);
+      setIsActive(false);
+    }
+  }, [user, freeWebDuration]);
+
+  useEffect(() => {
+    if (timeLeft > 0 && isActive) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setIsActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [timeLeft, isActive]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const tabs = [
+    { id: 'youtube', label: 'YouTube', icon: Youtube, url: 'https://www.youtube.com/embed?listType=search&list=' },
+    { id: 'google', label: 'Google', icon: Search, url: 'https://www.google.com/search?q=' },
+    { id: 'chat', label: 'Chat', icon: MessageCircle, url: 'https://chat.google.com/' },
+  ];
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (isGEDComplete) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-3xl mx-auto flex items-center justify-center shadow-xl">
+              <Globe className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Congratulations!</h1>
+            <p className="text-xl text-gray-600">You've completed your GED! Web access is now unlocked permanently.</p>
+            <div className="space-y-4">
+              <Button onClick={() => navigate('/dashboard')} size="lg" className="w-full h-14 text-lg font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">
+                Back to Dashboard
+              </Button>
+              <Button onClick={() => setCurrentTab('youtube')} variant="outline" size="lg" className="w-full h-14 text-lg rounded-2xl">
+                Start Browsing
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isActive || timeLeft === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-500 rounded-3xl mx-auto flex items-center justify-center shadow-xl">
+              <Lock className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Free Web Time Expired</h1>
+            <p className="text-xl text-gray-600">Complete another lesson to earn more free web time.</p>
+            <Button onClick={() => navigate('/dashboard')} size="lg" className="w-full h-14 text-lg font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl">
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-xl">
+              <ArrowLeft className="w-6 h-6" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
+                <Globe className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900">Free Web</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-blue-900">{formatTime(timeLeft)}</span>
+            </div>
+            <span className="text-sm text-gray-500">Time remaining</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-6 py-6">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="border-b border-gray-100">
+            <div className="flex">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setCurrentTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors ${
+                    currentTab === tab.id
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-[calc(100vh-200px)]">
+            {currentTab === 'youtube' && (
+              <iframe
+                src="https://www.youtube.com/embed?listType=search&list=educational%20videos"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
+            {currentTab === 'google' && (
+              <iframe
+                src="https://www.google.com/webhp?igu=1"
+                className="w-full h-full border-0"
+              />
+            )}
+            {currentTab === 'chat' && (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center space-y-4">
+                  <MessageCircle className="w-16 h-16 text-gray-400 mx-auto" />
+                  <p className="text-gray-600">Chat functionality would be embedded here</p>
+                  <p className="text-sm text-gray-500">For demo purposes, this is a placeholder</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

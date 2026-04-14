@@ -9,6 +9,7 @@ import Profile from "@/pages/Profile.jsx";
 import Resources from "@/pages/Resources.jsx";
 import Upgrade from "@/pages/Upgrade.jsx";
 import RealmPad from "@/pages/RealmPad.jsx";
+import FreeWeb from "@/pages/FreeWeb.jsx";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lesson" element={<Lesson />} />
+        <Route path="/freeweb" element={<FreeWeb />} />
         <Route path="/games" element={<Games />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/profile" element={<Profile />} />
