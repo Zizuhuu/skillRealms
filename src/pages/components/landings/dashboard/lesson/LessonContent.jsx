@@ -352,7 +352,12 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
 
   const aiUnavailable = !aiLesson && !aiLoading && !aiError;
   const data = aiLesson || getFallbackLesson(subject);
-  const questions = data.questions || [];
+  const safeData = {
+    title: typeof data.title === 'string' ? data.title : 'Lesson Title',
+    reading: typeof data.reading === 'string' ? data.reading : 'Lesson content not available.',
+    questions: Array.isArray(data.questions) ? data.questions : []
+  };
+  const questions = safeData.questions;
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
@@ -412,12 +417,12 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
                 <BookOpen className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{data.title}</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{safeData.title}</h2>
                 <p className="text-gray-500">Study this — then answer {totalQuestions} questions</p>
               </div>
             </div>
             <div className="space-y-3">
-              {data.reading.split('\n\n').map((para, idx) => (
+              {safeData.reading.split('\n\n').map((para, idx) => (
                 <p key={idx} className="text-gray-700 leading-relaxed text-lg whitespace-pre-line">
                   {para.split('**').map((part, i) =>
                     i % 2 === 1 ? <strong key={i} className="text-gray-900">{part}</strong> : part
@@ -427,9 +432,32 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
             </div>
           </CardContent>
         </Card>
-        <Button onClick={() => setShowReading(false)} size="lg" className="w-full h-16 text-xl font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl">
+        <Button onClick={() => setShowReading(false)} size="lg" className="w-full h-16 text-xl font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl" disabled={totalQuestions === 0}>
           I'm Ready — Start Questions <ArrowRight className="ml-2 w-6 h-6" />
         </Button>
+        {totalQuestions === 0 && (
+          <p className="text-center text-red-500">No questions available for this lesson. Please try again later.</p>
+        )}
+      </div>
+    );
+  }
+
+  if (totalQuestions === 0) {
+    return (
+      <div className="space-y-6">
+        <MotivationalQuote />
+        <div className="flex flex-col items-center justify-center py-16 space-y-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg">
+            <BookOpen className="w-10 h-10 text-white" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-gray-900">Lesson Incomplete</h2>
+            <p className="text-gray-500">This lesson doesn't have questions available. Please try another lesson or contact support.</p>
+          </div>
+          <Button onClick={() => window.history.back()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3">
+            Go Back
+          </Button>
+        </div>
       </div>
     );
   }
