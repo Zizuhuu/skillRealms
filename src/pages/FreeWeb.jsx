@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock } from 'lucide-react';
+import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock, Gamepad2, Play, Zap, Hash, Music } from 'lucide-react';
 import moment from 'moment';
 
 export default function FreeWeb() {
@@ -61,7 +61,7 @@ export default function FreeWeb() {
 
   const isGEDComplete = progressData.every(p => p.current_lesson > 30);
   const isPro = userProfile?.is_pro || false;
-  const freeWebDuration = isPro ? 3600 : 900; // 1 hour or 15 min in seconds
+  const freeWebDuration = isPro ? 3600 : 1800; // 1 hour for pro, 30 min for free users
 
   useEffect(() => {
     if (!user) return;
@@ -114,9 +114,14 @@ export default function FreeWeb() {
   };
 
   const tabs = [
-    { id: 'youtube', label: 'YouTube', icon: Youtube, url: 'https://www.youtube.com/embed?listType=search&list=' },
-    { id: 'google', label: 'Google', icon: Search, url: 'https://www.google.com/search?q=' },
-    { id: 'chat', label: 'Chat', icon: MessageCircle, url: 'https://chat.google.com/' },
+    { id: 'youtube', label: 'YouTube', icon: Youtube, url: 'https://www.youtube.com/' },
+    { id: 'instagram', label: 'Instagram', icon: Globe, url: 'https://www.instagram.com/' },
+    { id: 'google', label: 'Google', icon: Search, url: 'https://www.google.com/webhp?igu=1' },
+    { id: 'games', label: 'Games', icon: Gamepad2, url: 'https://poki.com/' },
+    { id: 'netflix', label: 'Netflix', icon: Play, url: 'https://www.netflix.com/' },
+    { id: 'twitch', label: 'Twitch', icon: Zap, url: 'https://www.twitch.tv/' },
+    { id: 'reddit', label: 'Reddit', icon: Hash, url: 'https://www.reddit.com/' },
+    { id: 'tiktok', label: 'TikTok', icon: Music, url: 'https://www.tiktok.com/' },
   ];
 
   if (!user) {
@@ -218,10 +223,17 @@ export default function FreeWeb() {
           <div className="h-[calc(100vh-200px)]">
             {currentTab === 'youtube' && (
               <iframe
-                src="https://www.youtube.com/embed?listType=search&list=educational%20videos"
+                src="https://www.youtube.com/"
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+              />
+            )}
+            {currentTab === 'instagram' && (
+              <iframe
+                src="https://www.instagram.com/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               />
             )}
             {currentTab === 'google' && (
@@ -230,14 +242,40 @@ export default function FreeWeb() {
                 className="w-full h-full border-0"
               />
             )}
-            {currentTab === 'chat' && (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <div className="text-center space-y-4">
-                  <MessageCircle className="w-16 h-16 text-gray-400 mx-auto" />
-                  <p className="text-gray-600">Chat functionality would be embedded here</p>
-                  <p className="text-sm text-gray-500">For demo purposes, this is a placeholder</p>
-                </div>
-              </div>
+            {currentTab === 'games' && (
+              <iframe
+                src="https://poki.com/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+            {currentTab === 'netflix' && (
+              <iframe
+                src="https://www.netflix.com/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+            {currentTab === 'twitch' && (
+              <iframe
+                src="https://www.twitch.tv/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+            {currentTab === 'reddit' && (
+              <iframe
+                src="https://www.reddit.com/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+            {currentTab === 'tiktok' && (
+              <iframe
+                src="https://www.tiktok.com/"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
             )}
           </div>
         </div>
