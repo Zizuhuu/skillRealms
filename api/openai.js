@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 export default async function handler(req, res) {
-  const OPENAI_KEY = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY;
+  const OPENAI_KEY = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 
   // Basic CORS support for cross-origin dev setups
   res.setHeader('Access-Control-Allow-Origin', '*');

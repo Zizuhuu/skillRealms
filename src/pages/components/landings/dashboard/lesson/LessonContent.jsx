@@ -8,7 +8,7 @@ import MotivationalQuote from "@/pages/components/landings/dashboard/lesson/Moti
 import VideoLesson from "@/pages/components/landings/dashboard/lesson/VideoLesson.jsx";
 import moment from 'moment';
 
-// Fallback lesson database (used if AI call fails or no OpenAI key)
+// Fallback lesson database for lesson generation failures
 const lessonDatabase = {
   math: {
     title: "Arithmetic & Problem Solving",
@@ -138,13 +138,17 @@ const PHASE_QUIZ_OFFER = 'quiz_offer';
 const PHASE_PRACTICE_QUIZ = 'practice_quiz';
 const PHASE_COMPLETE = 'complete';
 
-// ---- REPLACE THIS with your actual OpenAI key in .env ----
+// ---- REPLACE THIS with your actual server API key in .env ----
 // Create a file called .env in your project root with:
 // VITE_OPENAI_KEY=sk-your-key-here
 // Optionally, you can set a proxy URL (defaults to /api/openai):
 // VITE_OPENAI_PROXY_URL=http://localhost:3001/api/openai
 const DEFAULT_OPENAI_PROXY_URL = '/api/openai';
 const EXTERNAL_OPENAI_PROXY_URL = import.meta.env.VITE_OPENAI_PROXY_URL;
+
+function getFallbackLesson(subject) {
+  return lessonDatabase[subject] || lessonDatabase.math;
+}
 
 let serverOpenAIKeyAvailable = null;
 let resolvedOpenAIProxyUrl = null;
@@ -163,7 +167,7 @@ async function getOpenAIProxyStatus(url) {
 async function resolveOpenAIProxyUrl() {
   if (resolvedOpenAIProxyUrl !== null) return resolvedOpenAIProxyUrl;
 
-  const candidates = [EXTERNAL_OPENAI_PROXY_URL, DEFAULT_OPENAI_PROXY_URL].filter(Boolean);
+  const candidates = [DEFAULT_OPENAI_PROXY_URL, EXTERNAL_OPENAI_PROXY_URL].filter(Boolean);
   for (const url of candidates) {
     if (await getOpenAIProxyStatus(url)) {
       resolvedOpenAIProxyUrl = url;
@@ -171,7 +175,7 @@ async function resolveOpenAIProxyUrl() {
     }
   }
 
-  throw new Error('OpenAI key not configured on server');
+  throw new Error('Server key not configured on server');
 }
 
 async function checkServerOpenAIKey() {
@@ -210,38 +214,46 @@ async function generateAILesson(subject, lessonNumber) {
 
     const canUseProxy = await checkServerOpenAIKey();
     if (!canUseProxy) {
-      throw new Error('OpenAI key not configured on server');
+      return getFallbackLesson(subject);
     }
 
     const prompt = `Create a personalized GED lesson for adult learners on: "${todayTopic}". Today's date is ${today}. Make this lesson unique for today by incorporating current events, seasonal themes, or daily relevance where appropriate.
 
 This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on practical, real-world applications that adults need for jobs, daily life, and further education.\n\nReturn a JSON object with:\n- "title": a clear specific title (string)\n- "reading": a reading passage with 3 paragraphs using **bold** for key terms (string)\n- "questions": array of exactly 5 objects, each with:\n  - "question": a practical real-world scenario question (string)\n  - "options": exactly 4 answer choices (array of strings)\n  - "correct": 0-indexed position of the correct answer (number 0-3)\n  - "explanation": a clear helpful explanation (string)\n\nKeep language at 6th-8th grade reading level. Use examples from work, home, and community that adults relate to. Make it engaging and confidence-building. Ensure the content is fresh and relevant for today's date.`;
 
-    const proxyUrl = await resolveOpenAIProxyUrl();
-    const res = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      })
-    });
+    try {
+      const proxyUrl = await resolveOpenAIProxyUrl();
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' }
+        })
+      });
 
-    if (!res.ok) {
-      throw new Error(`AI request failed: ${res.status}`);
+      if (!res.ok) {
+        console.warn('Lesson request failed with status', res.status, 'falling back to local lesson');
+        return getFallbackLesson(subject);
+      }
+
+      const json = await res.json();
+      const result = JSON.parse(json.choices[0].message.content);
+
+      if (result?.questions?.length > 0) {
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        return result;
+      }
+
+      console.warn('Lesson response did not contain valid lesson content, using fallback');
+      return getFallbackLesson(subject);
+    } catch (err) {
+      console.warn('Lesson request failed, falling back to local lesson', err);
+      return getFallbackLesson(subject);
     }
-
-    const json = await res.json();
-    const result = JSON.parse(json.choices[0].message.content);
-
-    if (result?.questions?.length > 0) {
-      localStorage.setItem(cacheKey, JSON.stringify(result));
-      return result;
-    }
-    return null;
 }
 
 export default function LessonContent({ subject, lessonNumber, onComplete, isPro }) {

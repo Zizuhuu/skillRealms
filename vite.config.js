@@ -10,11 +10,30 @@ function openAIProxyPlugin() {
   const handler = async (req, res, next) => {
     if (!req.url?.startsWith('/api/openai')) return next();
 
-    const openaiKey = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY;
+    const openaiKey = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
     if (!openaiKey) {
       res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ error: 'OpenAI key missing. Set VITE_OPENAI_KEY in .env.' }));
       return;
+    }
+
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204;
+      return res.end();
+    }
+
+    if (req.method === 'GET') {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ ok: true, hasKey: true }));
+    }
+
+    if (req.method !== 'POST') {
+      res.statusCode = 405;
+      res.setHeader('Allow', 'GET, POST, OPTIONS');
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(JSON.stringify({ error: 'Method Not Allowed' }));
     }
 
     try {
@@ -41,6 +60,7 @@ function openAIProxyPlugin() {
     } catch (err) {
       console.error('OpenAI proxy error:', err);
       res.statusCode = 500;
+      res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ error: 'OpenAI proxy failed' }));
     }
   };
