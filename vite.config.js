@@ -10,7 +10,7 @@ function openAIProxyPlugin() {
   const handler = async (req, res, next) => {
     if (!req.url?.startsWith('/api/openai')) return next();
 
-    const openaiKey = process.env.VITE_OPENAI_KEY;
+    const openaiKey = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY;
     if (!openaiKey) {
       res.statusCode = 500;
       res.end(JSON.stringify({ error: 'OpenAI key missing. Set VITE_OPENAI_KEY in .env.' }));
