@@ -282,6 +282,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   const [practiceSelected, setPracticeSelected] = useState(null);
   const [practiceShowResult, setPracticeShowResult] = useState(false);
   const [practiceScore, setPracticeScore] = useState(0);
+  const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
 
   useEffect(() => {
     setPhase(PHASE_LESSON);
@@ -309,6 +310,12 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
       })
       .finally(() => setAiLoading(false));
   }, [subject, lessonNumber]);
+
+  useEffect(() => {
+    if (phase === PHASE_PRACTICE_QUIZ && practiceIndex >= practiceQuestions.length && practiceQuestions.length > 0) {
+      onComplete();
+    }
+  }, [phase, practiceIndex, practiceQuestions.length, onComplete]);
 
   if (aiLoading) {
     return (
@@ -366,15 +373,8 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     questions: Array.isArray(data.questions) ? data.questions : []
   };
   const questions = safeData.questions;
-  const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
-
-  useEffect(() => {
-    if (phase === PHASE_PRACTICE_QUIZ && practiceIndex >= practiceQuestions.length && practiceQuestions.length > 0) {
-      onComplete();
-    }
-  }, [phase, practiceIndex, practiceQuestions.length, onComplete]);
 
   const progressPct = showReading ? 5 : Math.round(((questionIndex + 1) / totalQuestions) * 95);
 
