@@ -29,39 +29,34 @@ function openAIProxyPlugin() {
       return res.end(JSON.stringify({ ok: true, hasKey: true }));
     }
 
-    if (req.method !== 'POST') {
-      res.statusCode = 405;
-      res.setHeader('Allow', 'GET, POST, OPTIONS');
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: 'Method Not Allowed' }));
-    }
+    if (req.method === 'POST') {
+      try {
+        const body = await new Promise((resolve, reject) => {
+          let data = '';
+          req.on('data', chunk => data += chunk);
+          req.on('end', () => resolve(data));
+          req.on('error', reject);
+        });
 
-    try {
-      const body = await new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', chunk => data += chunk);
-        req.on('end', () => resolve(data));
-        req.on('error', reject);
-      });
+        const proxyRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${openaiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body
+        });
 
-      const proxyRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body
-      });
-
-      const text = await proxyRes.text();
-      res.statusCode = proxyRes.status;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(text);
-    } catch (err) {
-      console.error('OpenAI proxy error:', err);
-      res.statusCode = 500;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'OpenAI proxy failed' }));
+        const text = await proxyRes.text();
+        res.statusCode = proxyRes.status;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(text);
+      } catch (err) {
+        console.error('OpenAI proxy error:', err);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'OpenAI proxy failed' }));
+      }
     }
   };
 

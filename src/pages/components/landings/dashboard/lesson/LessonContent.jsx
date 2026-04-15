@@ -229,9 +229,10 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-3.5-turbo',
           messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' }
+          temperature: 0.7,
+          max_tokens: 1000
         })
       });
 
@@ -241,10 +242,17 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
       }
 
       const json = await res.json();
-      const result = JSON.parse(json.choices[0].message.content);
+      let result = json?.choices?.[0]?.message?.content ?? json?.choices?.[0]?.message;
+      if (typeof result === 'string') {
+        try {
+          result = JSON.parse(result);
+        } catch {
+          console.warn('Could not parse AI lesson string response; using fallback', result);
+          result = null;
+        }
+      }
 
       if (result?.title && result?.reading) {
-        // If AI provided questions, use them; otherwise, add fallback questions
         if (!result.questions || !Array.isArray(result.questions) || result.questions.length === 0) {
           result.questions = getFallbackLesson(subject).questions;
         }
@@ -361,6 +369,13 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
+
+  useEffect(() => {
+    if (phase === PHASE_PRACTICE_QUIZ && practiceIndex >= practiceQuestions.length && practiceQuestions.length > 0) {
+      onComplete();
+    }
+  }, [phase, practiceIndex, practiceQuestions.length, onComplete]);
+
   const progressPct = showReading ? 5 : Math.round(((questionIndex + 1) / totalQuestions) * 95);
 
   const handleCheckAnswer = () => {
@@ -499,7 +514,25 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   }
 
   if (phase === PHASE_PRACTICE_QUIZ) {
-    if (practiceIndex >= practiceQuestions.length) { onComplete(); return null; }
+    if (practiceQuestions.length === 0) {
+      return (
+        <div className="space-y-6">
+          <MotivationalQuote />
+          <div className="flex flex-col items-center justify-center py-16 space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg">
+              <BookOpen className="w-10 h-10 text-white" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-gray-900">No Practice Questions</h2>
+              <p className="text-gray-500">There are no practice questions available for this lesson yet.</p>
+            </div>
+            <Button onClick={onComplete} className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3">
+              Continue
+            </Button>
+          </div>
+        </div>
+      );
+    }
     const pq = practiceQuestions[practiceIndex];
     const pProgress = Math.round(((practiceIndex + 1) / practiceQuestions.length) * 100);
     return (
@@ -518,21 +551,31 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
               <h2 className="text-xl font-bold text-gray-900">Practice Quiz</h2>
             </div>
             <p className="text-xl text-gray-800 font-medium mb-5">{pq.question}</p>
-            <RadioGroup value={practiceSelected?.toString()} onValueChange={(val) => !practiceShowResult && setPracticeSelected(parseInt(val))} className="space-y-3">
+            <div className="space-y-3">
               {pq.options.map((option, idx) => {
                 let bg = "bg-gray-50 border-gray-200";
-                if (practiceShowResult) { if (idx === pq.correct) bg = "bg-green-50 border-green-500"; else if (idx === practiceSelected) bg = "bg-red-50 border-red-500"; }
-                else if (practiceSelected === idx) bg = "bg-blue-50 border-blue-500";
+                if (practiceShowResult) {
+                  if (idx === pq.correct) bg = "bg-green-50 border-green-500";
+                  else if (idx === practiceSelected) bg = "bg-red-50 border-red-500";
+                } else if (practiceSelected === idx) bg = "bg-blue-50 border-blue-500";
                 return (
-                  <div key={idx} className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-colors ${bg}`}>
-                    <RadioGroupItem value={idx.toString()} id={`pq-${idx}`} disabled={practiceShowResult} />
-                    <Label htmlFor={`pq-${idx}`} className="text-lg cursor-pointer flex-1">{option}</Label>
+                  <label key={idx} className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-colors cursor-pointer ${bg}`}>
+                    <input
+                      type="radio"
+                      name={`practice-option-${practiceIndex}`}
+                      value={idx}
+                      checked={practiceSelected === idx}
+                      disabled={practiceShowResult}
+                      onChange={() => !practiceShowResult && setPracticeSelected(idx)}
+                      className="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="text-lg flex-1">{option}</span>
                     {practiceShowResult && idx === pq.correct && <CheckCircle2 className="w-6 h-6 text-green-500" />}
                     {practiceShowResult && idx === practiceSelected && idx !== pq.correct && <XCircle className="w-6 h-6 text-red-500" />}
-                  </div>
+                  </label>
                 );
               })}
-            </RadioGroup>
+            </div>
             {practiceShowResult && (
               <div className={`mt-4 p-4 rounded-xl ${practiceSelected === pq.correct ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
                 <p className="text-gray-700"><strong>{practiceSelected === pq.correct ? '✓ Correct!' : '✗ Not quite.'}</strong>{' '}{pq.explanation}</p>
@@ -567,7 +610,25 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     );
   }
 
-  if (!currentQ) return null;
+  if (!currentQ) {
+    return (
+      <div className="space-y-6">
+        <MotivationalQuote />
+        <div className="flex flex-col items-center justify-center py-16 space-y-6">
+          <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg">
+            <BookOpen className="w-10 h-10 text-white" />
+          </div>
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-gray-900">Question Not Found</h2>
+            <p className="text-gray-500">Something went wrong finding the next question. Please go back and try again.</p>
+          </div>
+          <Button onClick={() => window.history.back()} className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -588,21 +649,31 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
             </div>
           </div>
           <p className="text-xl text-gray-800 font-medium mb-6">{currentQ.question}</p>
-          <RadioGroup value={selectedAnswer?.toString()} onValueChange={(val) => !showResult && setSelectedAnswer(parseInt(val))} className="space-y-3">
+          <div className="space-y-3">
             {currentQ.options.map((option, idx) => {
               let bgColor = "bg-gray-50 hover:bg-gray-100 border-gray-200";
-              if (showResult) { if (idx === currentQ.correct) bgColor = "bg-green-50 border-green-500"; else if (idx === selectedAnswer && idx !== currentQ.correct) bgColor = "bg-red-50 border-red-500"; }
-              else if (selectedAnswer === idx) bgColor = "bg-blue-50 border-blue-500";
+              if (showResult) {
+                if (idx === currentQ.correct) bgColor = "bg-green-50 border-green-500";
+                else if (idx === selectedAnswer && idx !== currentQ.correct) bgColor = "bg-red-50 border-red-500";
+              } else if (selectedAnswer === idx) bgColor = "bg-blue-50 border-blue-500";
               return (
-                <div key={idx} className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-colors ${bgColor}`}>
-                  <RadioGroupItem value={idx.toString()} id={`opt-${idx}`} disabled={showResult} />
-                  <Label htmlFor={`opt-${idx}`} className="text-lg cursor-pointer flex-1">{option}</Label>
+                <label key={idx} className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-colors cursor-pointer ${bgColor}`}>
+                  <input
+                    type="radio"
+                    name={`question-option-${questionIndex}`}
+                    value={idx}
+                    checked={selectedAnswer === idx}
+                    disabled={showResult}
+                    onChange={() => !showResult && setSelectedAnswer(idx)}
+                    className="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="text-lg flex-1">{option}</span>
                   {showResult && idx === currentQ.correct && <CheckCircle2 className="w-6 h-6 text-green-500" />}
                   {showResult && idx === selectedAnswer && idx !== currentQ.correct && <XCircle className="w-6 h-6 text-red-500" />}
-                </div>
+                </label>
               );
             })}
-          </RadioGroup>
+          </div>
           {showResult && (
             <div className={`mt-4 p-4 rounded-xl ${selectedAnswer === currentQ.correct ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
               <p className="text-gray-700"><strong>{selectedAnswer === currentQ.correct ? '✓ Correct!' : '✗ Not quite.'}</strong>{' '}{currentQ.explanation}</p>
