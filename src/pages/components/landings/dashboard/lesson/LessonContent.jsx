@@ -243,7 +243,11 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
       const json = await res.json();
       const result = JSON.parse(json.choices[0].message.content);
 
-      if (result?.questions?.length > 0) {
+      if (result?.title && result?.reading) {
+        // If AI provided questions, use them; otherwise, add fallback questions
+        if (!result.questions || !Array.isArray(result.questions) || result.questions.length === 0) {
+          result.questions = getFallbackLesson(subject).questions;
+        }
         localStorage.setItem(cacheKey, JSON.stringify(result));
         return result;
       }
@@ -346,8 +350,9 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     );
   }
 
-  const data = aiLesson;
-  const questions = data?.questions || [];
+  const aiUnavailable = !aiLesson && !aiLoading && !aiError;
+  const data = aiLesson || getFallbackLesson(subject);
+  const questions = data.questions || [];
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
   const totalQuestions = questions.length;
   const currentQ = questions[questionIndex];
