@@ -169,10 +169,15 @@ export default function Lesson() {
           </div>
           <h1 className="text-4xl font-bold text-gray-900">Amazing Work!</h1>
           <p className="text-xl text-gray-600">You've completed all your daily lessons. Your dedication is inspiring!</p>
-          <p className="text-lg text-green-600 font-medium">Come back tomorrow for new lessons.</p>
-          <Button onClick={() => navigate('/dashboard')} size="lg" className="h-16 px-8 text-xl font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">
-            Back to Dashboard
-          </Button>
+          <p className="text-lg text-green-600 font-medium">Open Free Web now to use your earned browsing time.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Button onClick={() => navigate('/freeweb')} size="lg" className="h-16 px-8 text-xl font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl">
+              Open Free Web
+            </Button>
+            <Button onClick={() => navigate('/dashboard')} size="lg" className="h-16 px-8 text-xl font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">
+              Back to Dashboard
+            </Button>
+          </div>
         </motion.div>
       </div>
     );

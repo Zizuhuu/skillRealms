@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock, Gamepad2, Play, Zap, Hash, Music } from 'lucide-react';
+import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock, Gamepad2, Play, Zap, Hash, Music, Infinity as InfinityIcon } from 'lucide-react';
 import moment from 'moment';
 
 export default function FreeWeb() {
@@ -61,10 +61,17 @@ export default function FreeWeb() {
 
   const isGEDComplete = progressData.every(p => p.current_lesson > 30);
   const isPro = userProfile?.is_pro || false;
-  const freeWebDuration = isPro ? 3600 : 1800; // 1 hour for pro, 30 min for free users
+  const hasPermanentAccess = isPro || isGEDComplete;
+  const freeWebDuration = 1800; // 30 minutes for free users after each lesson
 
   useEffect(() => {
     if (!user) return;
+
+    if (hasPermanentAccess) {
+      setIsActive(true);
+      setTimeLeft(0);
+      return;
+    }
 
     const today = moment().format('YYYY-MM-DD');
     const lastLessonDate = localStorage.getItem(`last_lesson_${user.email}`);
@@ -90,7 +97,7 @@ export default function FreeWeb() {
       setTimeLeft(0);
       setIsActive(false);
     }
-  }, [user, freeWebDuration]);
+  }, [user, freeWebDuration, hasPermanentAccess]);
 
   useEffect(() => {
     if (timeLeft > 0 && isActive) {
@@ -132,7 +139,7 @@ export default function FreeWeb() {
     );
   }
 
-  if (isGEDComplete) {
+  if (isGEDComplete && !isPro) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-6">
         <Card className="max-w-md w-full">
@@ -156,7 +163,7 @@ export default function FreeWeb() {
     );
   }
 
-  if (!isActive || timeLeft === 0) {
+  if (!hasPermanentAccess && (!isActive || timeLeft === 0)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-6">
         <Card className="max-w-md w-full">
@@ -187,15 +194,20 @@ export default function FreeWeb() {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-xl flex items-center justify-center">
                 <Globe className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">Free Web</span>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-blue-500">{isPro ? 'Pro Web Access' : 'Free Web'}</p>
+                <span className="text-xl font-bold text-gray-900">{isPro ? 'Permanent browsing' : 'Free Web'}</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl">
-              <Clock className="w-5 h-5 text-blue-600" />
-              <span className="font-semibold text-blue-900">{formatTime(timeLeft)}</span>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isPro || isGEDComplete ? 'bg-green-50' : 'bg-blue-50'}`}>
+              {isPro || isGEDComplete ? <InfinityIcon className="w-5 h-5 text-green-600" /> : <Clock className="w-5 h-5 text-blue-600" />}
+              <span className={`font-semibold ${isPro || isGEDComplete ? 'text-green-900' : 'text-blue-900'}`}>
+                {isPro || isGEDComplete ? 'Permanent access' : formatTime(timeLeft)}
+              </span>
             </div>
-            <span className="text-sm text-gray-500">Time remaining</span>
+            <span className="text-sm text-gray-500">{isPro || isGEDComplete ? 'Unlimited browsing' : 'Time remaining'}</span>
           </div>
         </div>
       </header>

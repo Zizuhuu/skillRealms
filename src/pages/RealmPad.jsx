@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/Button';
 import { Phone, Wifi, Bluetooth, Users } from 'lucide-react';
 
 const REALMPAD_LINK = 'https://buy.stripe.com/test_7sY6oH2gFcDj8Cv9decwg02';
-const IPAD_LINK = 'https://www.apple.com/app-store/';
 
 export default function RealmPad() {
   return (
@@ -71,11 +70,6 @@ export default function RealmPad() {
             <a href={REALMPAD_LINK} target="_blank" rel="noreferrer" className="block">
               <Button size="lg" className="w-full text-center bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white">
                 Buy RealmPad
-              </Button>
-            </a>
-            <a href={IPAD_LINK} target="_blank" rel="noreferrer" className="block">
-              <Button variant="outline" size="lg" className="w-full">
-                Download for iPad
               </Button>
             </a>
           </div>
