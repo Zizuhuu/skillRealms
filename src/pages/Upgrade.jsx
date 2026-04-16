@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ArrowLeft, Star, Check, Zap, BookOpen, BarChart2, Infinity, Trophy, Lock } from 'lucide-react';
 const FREE_FEATURES = ["1 lesson per subject per day", "Progress tracking", "Basic quiz (3 questions)", "Resource directory", "Day streak counter"];
 const PRO_FEATURES = ["Everything is Free", "Unlimited practice drills", "In-depth explanations", "Smart review sessions", "Permanent web access", "30 questions per subject", "Detailed analytics", "Downloadable study guides", "Priority support"];
 
 export default function Upgrade() {
   const [user, setUser] = useState(null);
+  const [proCode, setProCode] = useState('');
+  const [codeStatus, setCodeStatus] = useState('');
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +25,53 @@ export default function Upgrade() {
   }, [navigate]);
 
   const handleUpgrade = () => window.open('https://buy.stripe.com/test_3cIeVd2gFavbbOH3SUcwg01', '_blank');
+  const PRO_UNLOCK_CODE = 'unlockproforfeatures';
+
+  const handleUnlockCode = async () => {
+    if (!user?.email || isUnlocking) return;
+    const normalized = proCode.trim().toLowerCase();
+    if (normalized !== PRO_UNLOCK_CODE) {
+      setCodeStatus('Invalid code. Please check and try again.');
+      return;
+    }
+
+    setIsUnlocking(true);
+    setCodeStatus('');
+    try {
+      let snap = null;
+      if (user?.uid) {
+        const uidQuery = query(collection(db, 'UserProfile'), where('user_uid', '==', user.uid));
+        const uidSnap = await getDocs(uidQuery);
+        if (!uidSnap.empty) snap = uidSnap;
+      }
+      if (!snap) {
+        const emailQuery = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        snap = await getDocs(emailQuery);
+      }
+      if (snap.empty) {
+        await addDoc(collection(db, 'UserProfile'), {
+          user_email: user.email,
+          user_uid: user.uid,
+          is_pro: true,
+          pro_code_redeemed: normalized,
+          pro_unlocked_at: new Date().toISOString()
+        });
+      } else {
+        await updateDoc(doc(db, 'UserProfile', snap.docs[0].id), {
+          is_pro: true,
+          user_uid: user.uid,
+          pro_code_redeemed: normalized,
+          pro_unlocked_at: new Date().toISOString()
+        });
+      }
+      setCodeStatus('Pro unlocked successfully! Returning to dashboard...');
+      setTimeout(() => navigate('/dashboard'), 900);
+    } catch (err) {
+      setCodeStatus('Could not unlock Pro right now. Please try again.');
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,6 +106,25 @@ export default function Upgrade() {
             </div>
           ))}
         </div>
+        <Card className="border border-purple-200">
+          <CardContent className="p-5 space-y-3">
+            <h3 className="font-bold text-lg text-gray-900">Already bought Pro? Enter your code</h3>
+            <input
+              value={proCode}
+              onChange={(e) => setProCode(e.target.value)}
+              placeholder="Enter unlock code"
+              className="w-full h-12 px-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <Button
+              onClick={handleUnlockCode}
+              disabled={!proCode.trim() || isUnlocking}
+              className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+            >
+              {isUnlocking ? 'Unlocking…' : 'Unlock Pro with Code'}
+            </Button>
+            {codeStatus && <p className="text-sm text-gray-600">{codeStatus}</p>}
+          </CardContent>
+        </Card>
         <div className="space-y-4">
           <Button onClick={handleUpgrade} size="lg" className="w-full h-16 text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-2xl shadow-xl">
             <Star className="mr-2 w-6 h-6" /> Upgrade to Pro — $5.99/mo
