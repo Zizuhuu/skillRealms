@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Play, ChevronDown, ChevronUp, Youtube } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 // Curated free YouTube educational videos per subject (GED-focused)
 const subjectVideos = {
