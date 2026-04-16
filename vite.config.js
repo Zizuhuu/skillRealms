@@ -11,10 +11,24 @@ function openAIProxyPlugin() {
     if (!req.url?.startsWith('/api/openai')) return next();
 
     const openaiKey = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
+    const groqKey = process.env.GROQ_API_KEY;
+    const siliconFlowKey = process.env.SILICON_FLOW_API_KEY;
+
+    let apiUrl, apiKey;
+
+    if (siliconFlowKey) {
+      apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
+      apiKey = siliconFlowKey;
+    } else if (groqKey) {
+      apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+      apiKey = groqKey;
+    } else if (openaiKey) {
+      apiUrl = 'https://api.openai.com/v1/chat/completions';
+      apiKey = openaiKey;
+    } else {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'OpenAI key missing. Set VITE_OPENAI_KEY in .env.' }));
+      res.end(JSON.stringify({ error: 'No AI API key configured' }));
       return;
     }
 
@@ -24,9 +38,13 @@ function openAIProxyPlugin() {
     }
 
     if (req.method === 'GET') {
+      let provider = 'unknown';
+      if (siliconFlowKey) provider = 'siliconflow';
+      else if (groqKey) provider = 'groq';
+      else if (openaiKey) provider = 'openai';
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ ok: true, hasKey: true }));
+      return res.end(JSON.stringify({ ok: true, hasKey: true, provider }));
     }
 
     if (req.method === 'POST') {
@@ -38,13 +56,22 @@ function openAIProxyPlugin() {
           req.on('error', reject);
         });
 
-        const proxyRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        let requestBody = JSON.parse(body);
+        
+        // Map model names for different providers
+        if (siliconFlowKey && requestBody.model === 'gpt-3.5-turbo') {
+          requestBody.model = 'Qwen/Qwen2.5-32B-Instruct';
+        } else if (groqKey && requestBody.model === 'gpt-3.5-turbo') {
+          requestBody.model = 'llama3-70b-8192';
+        }
+
+        const proxyRes = await fetch(apiUrl, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${openaiKey}`,
+            Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body
+          body: JSON.stringify(requestBody)
         });
 
         const text = await proxyRes.text();
@@ -52,10 +79,10 @@ function openAIProxyPlugin() {
         res.setHeader('Content-Type', 'application/json');
         res.end(text);
       } catch (err) {
-        console.error('OpenAI proxy error:', err);
+        console.error('AI proxy error:', err);
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'OpenAI proxy failed' }));
+        res.end(JSON.stringify({ error: 'AI proxy failed' }));
       }
     }
   };

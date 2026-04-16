@@ -65,7 +65,7 @@ export default function Lesson() {
     },
     enabled: !!user?.email,
     retry: 2,
-    staleTime: 60000
+    staleTime: 0
   });
 
   const { data: progressData = [] } = useQuery({
@@ -79,6 +79,24 @@ export default function Lesson() {
       } catch (err) {
         console.error('Learning progress query error:', err);
         return [];
+      }
+    },
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 60000
+  });
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      try {
+        const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch (err) {
+        return null;
       }
     },
     enabled: !!user?.email,
@@ -148,8 +166,6 @@ export default function Lesson() {
       // Set last lesson date for free web
       const today = moment().format('YYYY-MM-DD');
       localStorage.setItem(`last_lesson_${user.email}`, today);
-      // Navigate to free web
-      navigate('/freeweb');
     }
   });
 
@@ -228,7 +244,7 @@ export default function Lesson() {
               displaySubject={currentSubject}
               lessonNumber={progressData.find(p => p.subject === contentSubject)?.current_lesson || 1}
               onComplete={isProStandalone ? () => setShowCompletion(true) : handleLessonComplete}
-              isPro={false}
+              isPro={userProfile?.is_pro || false}
             />
           </motion.div>
         </AnimatePresence>

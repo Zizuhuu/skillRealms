@@ -233,62 +233,7 @@ export default function FreeWeb() {
             </div>
           </div>
           <div className="h-[calc(100vh-200px)]">
-            {currentTab === 'youtube' && (
-              <iframe
-                src="https://www.youtube.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            )}
-            {currentTab === 'instagram' && (
-              <iframe
-                src="https://www.instagram.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            {currentTab === 'google' && (
-              <iframe
-                src="https://www.google.com/webhp?igu=1"
-                className="w-full h-full border-0"
-              />
-            )}
-            {currentTab === 'games' && (
-              <iframe
-                src="https://poki.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            {currentTab === 'netflix' && (
-              <iframe
-                src="https://www.netflix.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            {currentTab === 'twitch' && (
-              <iframe
-                src="https://www.twitch.tv/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            {currentTab === 'reddit' && (
-              <iframe
-                src="https://www.reddit.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
-            {currentTab === 'tiktok' && (
-              <iframe
-                src="https://www.tiktok.com/"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              />
-            )}
+            <iframe src={tabs.find(t => t.id === currentTab).url} className="w-full h-full border-0" />
           </div>
         </div>
       </main>
