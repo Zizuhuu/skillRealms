@@ -113,6 +113,10 @@ export default function Dashboard() {
         const emailSnap = await getDocs(emailQuery);
         if (emailSnap.empty) return null;
         return { id: emailSnap.docs[0].id, ...emailSnap.docs[0].data() };
+        const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
       } catch {
         return null;
       }

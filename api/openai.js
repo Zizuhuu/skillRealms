@@ -32,6 +32,7 @@ export default async function handler(req, res) {
       ok: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY || SKILLCLOUD_KEY), 
       hasKey: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY || SKILLCLOUD_KEY), 
       provider: activeProvider
+      provider: SKILLCLOUD_KEY ? 'skillcloud' : SILICON_FLOW_KEY ? 'siliconflow' : GROQ_KEY ? 'groq' : 'openai'
     });
   }
 
@@ -79,6 +80,11 @@ export default async function handler(req, res) {
     } else if (provider === 'siliconflow' && requestBody.model === 'gpt-3.5-turbo') {
       requestBody.model = 'deepseek-ai/DeepSeek-V3';
     } else if (provider === 'groq' && requestBody.model === 'gpt-3.5-turbo') {
+    if (SKILLCLOUD_KEY && requestBody.model === 'gpt-3.5-turbo') {
+      requestBody.model = 'gpt-4o-mini';
+    } else if (SILICON_FLOW_KEY && requestBody.model === 'gpt-3.5-turbo') {
+      requestBody.model = 'deepseek-ai/DeepSeek-V3';
+    } else if (GROQ_KEY && requestBody.model === 'gpt-3.5-turbo') {
       requestBody.model = 'llama3-70b-8192';
     }
 

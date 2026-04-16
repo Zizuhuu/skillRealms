@@ -52,6 +52,11 @@ export default function Upgrade() {
         await addDoc(collection(db, 'UserProfile'), {
           user_email: user.email,
           user_uid: user.uid,
+      const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        await addDoc(collection(db, 'UserProfile'), {
+          user_email: user.email,
           is_pro: true,
           pro_code_redeemed: normalized,
           pro_unlocked_at: new Date().toISOString()

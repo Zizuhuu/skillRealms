@@ -52,6 +52,7 @@ function openAIProxyPlugin() {
 
     if (req.method === 'GET') {
       let provider = 'none';
+      let provider = 'unknown';
       if (skillCloudKey) provider = 'skillcloud';
       else if (siliconFlowKey) provider = 'siliconflow';
       else if (groqKey) provider = 'groq';

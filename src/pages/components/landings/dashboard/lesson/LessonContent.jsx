@@ -265,6 +265,7 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.85,
           max_tokens: isProUser ? 3500 : 1200
+          max_tokens: 1000
         })
       });
 
@@ -393,6 +394,8 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
                 setFallbackReason(result?.__fallbackReason || '');
                 setAiLesson(result);
               })
+            generateAILesson(subject, lessonNumber, isPro)
+              .then(result => setAiLesson(result))
               .catch(err => setAiError(err?.message || 'Failed to load lesson'))
               .finally(() => setAiLoading(false));
           }} className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3">
