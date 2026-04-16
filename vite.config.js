@@ -6,17 +6,30 @@ import dotenv from 'dotenv'
 
 dotenv.config();
 
+const firstEnv = (...keys) => {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+};
+
 function openAIProxyPlugin() {
   const handler = async (req, res, next) => {
     if (!req.url?.startsWith('/api/openai')) return next();
 
-    const openaiKey = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
-    const siliconFlowKey = process.env.SILICON_FLOW_API_KEY;
+    const openaiKey = firstEnv('OPENAI_API_KEY', 'OPENAI_KEY', 'VITE_OPENAI_KEY');
+    const groqKey = firstEnv('GROQ_API_KEY', 'VITE_GROQ_API_KEY');
+    const siliconFlowKey = firstEnv('SILICON_FLOW_API_KEY', 'SILICONFLOW_API_KEY', 'VITE_SILICON_FLOW_API_KEY');
+    const skillCloudKey = firstEnv('SKILLCLOUD_API_KEY', 'SKILLCLOUD_APIKEY', 'SKILLCLOUD_KEY', 'VITE_SKILLCLOUD_API_KEY');
+    const skillCloudUrl = firstEnv('SKILLCLOUD_API_URL', 'VITE_SKILLCLOUD_API_URL') || 'https://api.skillcloud.ai/v1/chat/completions';
 
     let apiUrl, apiKey;
 
-    if (siliconFlowKey) {
+    if (skillCloudKey) {
+      apiUrl = skillCloudUrl;
+      apiKey = skillCloudKey;
+    } else if (siliconFlowKey) {
       apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
       apiKey = siliconFlowKey;
     } else if (groqKey) {
@@ -38,13 +51,18 @@ function openAIProxyPlugin() {
     }
 
     if (req.method === 'GET') {
-      let provider = 'unknown';
-      if (siliconFlowKey) provider = 'siliconflow';
-      else if (groqKey) provider = 'groq';
-      else if (openaiKey) provider = 'openai';
+      const provider = skillCloudKey
+        ? 'skillcloud'
+        : siliconFlowKey
+          ? 'siliconflow'
+          : groqKey
+            ? 'groq'
+            : openaiKey
+              ? 'openai'
+              : 'none';
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ ok: true, hasKey: true, provider }));
+      return res.end(JSON.stringify({ ok: provider !== 'none', hasKey: provider !== 'none', provider }));
     }
 
     if (req.method === 'POST') {
@@ -56,13 +74,19 @@ function openAIProxyPlugin() {
           req.on('error', reject);
         });
 
-        let requestBody = JSON.parse(body);
+        const parsedBody = body ? JSON.parse(body) : {};
+        let requestBody = typeof parsedBody === 'object' && parsedBody ? parsedBody : {};
         
         // Map model names for different providers
-        if (siliconFlowKey && requestBody.model === 'gpt-3.5-turbo') {
-          requestBody.model = 'Qwen/Qwen2.5-32B-Instruct';
+        if (skillCloudKey && requestBody.model === 'gpt-3.5-turbo') {
+          requestBody.model = 'gpt-4o-mini';
+        } else if (siliconFlowKey && requestBody.model === 'gpt-3.5-turbo') {
+          requestBody.model = 'deepseek-ai/DeepSeek-V3';
         } else if (groqKey && requestBody.model === 'gpt-3.5-turbo') {
           requestBody.model = 'llama3-70b-8192';
+        }
+        if (requestBody.messages && !Array.isArray(requestBody.messages)) {
+          requestBody.messages = [{ role: 'user', content: String(requestBody.messages) }];
         }
 
         const proxyRes = await fetch(apiUrl, {

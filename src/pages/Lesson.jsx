@@ -42,7 +42,7 @@ export default function Lesson() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) setUser({ email: firebaseUser.email, full_name: firebaseUser.displayName || '' });
+      if (firebaseUser) setUser({ uid: firebaseUser.uid, email: firebaseUser.email, full_name: firebaseUser.displayName || '' });
       else navigate('/');
     });
     return unsub;
@@ -91,10 +91,15 @@ export default function Lesson() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
-        const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
-        const snap = await getDocs(q);
-        if (snap.empty) return null;
-        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+        if (user?.uid) {
+          const uidQuery = query(collection(db, 'UserProfile'), where('user_uid', '==', user.uid));
+          const uidSnap = await getDocs(uidQuery);
+          if (!uidSnap.empty) return { id: uidSnap.docs[0].id, ...uidSnap.docs[0].data() };
+        }
+        const emailQuery = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const emailSnap = await getDocs(emailQuery);
+        if (emailSnap.empty) return null;
+        return { id: emailSnap.docs[0].id, ...emailSnap.docs[0].data() };
       } catch (err) {
         return null;
       }
@@ -166,6 +171,11 @@ export default function Lesson() {
       // Set last lesson date for free web
       const today = moment().format('YYYY-MM-DD');
       localStorage.setItem(`last_lesson_${user.email}`, today);
+      const freeWebKey = `free_web_end_${user.email}`;
+      const currentEnd = localStorage.getItem(freeWebKey);
+      const now = moment();
+      const base = currentEnd && moment(currentEnd).isAfter(now) ? moment(currentEnd) : now;
+      localStorage.setItem(freeWebKey, base.add(30, 'minutes').toISOString());
     }
   });
 

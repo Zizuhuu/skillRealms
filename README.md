@@ -1,16 +1,40 @@
-# React + Vite
+# skillRealms
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+skillRealms is a React + Vite app for GED-focused lessons, games, and a timed "Free Web" browser experience.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## Build
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run build
+```
 
-## Expanding the ESLint configuration
+## AI proxy environment variables
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The app routes AI lesson generation through `/api/openai` and supports multiple providers.
+
+Configure one of these keys (aliases accepted):
+
+- `SKILLCLOUD_API_KEY` (also supports `SKILLCLOUD_APIKEY` / `SKILLCLOUD_KEY`; optional `SKILLCLOUD_API_URL`, defaults to `https://api.skillcloud.ai/v1/chat/completions`)
+- `SILICON_FLOW_API_KEY` (also supports `SILICONFLOW_API_KEY`)
+- `GROQ_API_KEY`
+- `OPENAI_API_KEY` (also supports `OPENAI_KEY` / `VITE_OPENAI_KEY`)
+
+Provider selection order is:
+
+1. SkillCloud
+2. SiliconFlow
+3. Groq
+4. OpenAI
+
+You can test key detection locally:
+
+```bash
+curl http://localhost:5000/api/openai
+```
