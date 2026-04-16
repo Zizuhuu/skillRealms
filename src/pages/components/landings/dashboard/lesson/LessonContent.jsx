@@ -191,6 +191,38 @@ async function checkServerOpenAIKey() {
   return serverOpenAIKeyAvailable;
 }
 
+function safeJsonParse(raw) {
+  if (typeof raw !== 'string') return raw;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // Continue to extract fenced/embedded JSON below.
+  }
+
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch?.[1]) {
+    try {
+      return JSON.parse(fencedMatch[1].trim());
+    } catch {
+      // fall through
+    }
+  }
+
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 async function generateAILesson(subject, lessonNumber, isProUser = false) {
     const today = moment().format('YYYY-MM-DD');
     const cacheKey = `ai_lesson_${subject}_lesson_${lessonNumber}_${today}`;
@@ -232,23 +264,23 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
           model: 'gpt-3.5-turbo',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.85,
+          max_tokens: isProUser ? 3500 : 1200
           max_tokens: 1000
         })
       });
 
       if (!res.ok) {
         console.warn('Lesson request failed with status', res.status, 'falling back to local lesson');
-        return getFallbackLesson(subject);
+        return { ...getFallbackLesson(subject), __fallbackReason: `AI request failed (${res.status})` };
       }
 
       const json = await res.json();
       let result = json?.choices?.[0]?.message?.content ?? json?.choices?.[0]?.message;
       if (typeof result === 'string') {
-        try {
-          result = JSON.parse(result);
-        } catch {
+        result = safeJsonParse(result);
+        if (!result) {
           console.warn('Could not parse AI lesson string response; using fallback', result);
-          result = null;
+          return { ...getFallbackLesson(subject), __fallbackReason: 'AI response was not valid JSON' };
         }
       }
 
@@ -256,15 +288,16 @@ This is lesson ${lessonNumber} of 30 in their GED preparation journey. Focus on 
         if (!result.questions || !Array.isArray(result.questions) || result.questions.length === 0) {
           result.questions = getFallbackLesson(subject).questions;
         }
+        result.__fallbackReason = null;
         localStorage.setItem(cacheKey, JSON.stringify(result));
         return result;
       }
 
       console.warn('Lesson response did not contain valid lesson content, using fallback');
-      return getFallbackLesson(subject);
+      return { ...getFallbackLesson(subject), __fallbackReason: 'AI response missing lesson fields' };
     } catch (err) {
       console.warn('Lesson request failed, falling back to local lesson', err);
-      return getFallbackLesson(subject);
+      return { ...getFallbackLesson(subject), __fallbackReason: 'AI request failed; using local lesson' };
     }
 }
 
@@ -282,6 +315,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   const [practiceSelected, setPracticeSelected] = useState(null);
   const [practiceShowResult, setPracticeShowResult] = useState(false);
   const [practiceScore, setPracticeScore] = useState(0);
+  const [fallbackReason, setFallbackReason] = useState('');
   const practiceQuestions = practiceQuizBank[subject] || practiceQuizBank.math;
 
   useEffect(() => {
@@ -295,11 +329,13 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     setPracticeSelected(null);
     setPracticeShowResult(false);
     setPracticeScore(0);
+    setFallbackReason('');
     setAiLesson(null);
     setAiLoading(true);
 
     generateAILesson(subject, lessonNumber, isPro)
       .then(result => {
+        setFallbackReason(result?.__fallbackReason || '');
         setAiLesson(result);
         setAiError(null);
       })
@@ -353,6 +389,11 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
           <Button onClick={() => {
             setAiLoading(true);
             setAiError(null);
+          generateAILesson(subject, lessonNumber, isPro)
+              .then(result => {
+                setFallbackReason(result?.__fallbackReason || '');
+                setAiLesson(result);
+              })
             generateAILesson(subject, lessonNumber, isPro)
               .then(result => setAiLesson(result))
               .catch(err => setAiError(err?.message || 'Failed to load lesson'))
@@ -365,7 +406,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
     );
   }
 
-  const aiUnavailable = !aiLesson && !aiLoading && !aiError;
+  const aiUnavailable = Boolean(fallbackReason);
   const data = aiLesson || getFallbackLesson(subject);
   const safeData = {
     title: typeof data.title === 'string' ? data.title : 'Lesson Title',
@@ -414,7 +455,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
         <MotivationalQuote />
         {aiUnavailable && (
           <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-800">
-            Lesson content is loading from the standard library.
+            AI lesson unavailable right now ({fallbackReason}). Showing trusted built-in lesson content.
           </div>
         )}
         <div className="space-y-2">

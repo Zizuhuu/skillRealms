@@ -26,6 +26,7 @@ export default function Dashboard() {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({
+          uid: firebaseUser.uid,
           email: firebaseUser.email,
           full_name: firebaseUser.displayName || '',
           role: 'user'
@@ -103,6 +104,15 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return null;
       try {
+        if (user?.uid) {
+          const uidQuery = query(collection(db, 'UserProfile'), where('user_uid', '==', user.uid));
+          const uidSnap = await getDocs(uidQuery);
+          if (!uidSnap.empty) return { id: uidSnap.docs[0].id, ...uidSnap.docs[0].data() };
+        }
+        const emailQuery = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const emailSnap = await getDocs(emailQuery);
+        if (emailSnap.empty) return null;
+        return { id: emailSnap.docs[0].id, ...emailSnap.docs[0].data() };
         const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
         const snap = await getDocs(q);
         if (snap.empty) return null;

@@ -38,6 +38,20 @@ export default function Upgrade() {
     setIsUnlocking(true);
     setCodeStatus('');
     try {
+      let snap = null;
+      if (user?.uid) {
+        const uidQuery = query(collection(db, 'UserProfile'), where('user_uid', '==', user.uid));
+        const uidSnap = await getDocs(uidQuery);
+        if (!uidSnap.empty) snap = uidSnap;
+      }
+      if (!snap) {
+        const emailQuery = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        snap = await getDocs(emailQuery);
+      }
+      if (snap.empty) {
+        await addDoc(collection(db, 'UserProfile'), {
+          user_email: user.email,
+          user_uid: user.uid,
       const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
       const snap = await getDocs(q);
       if (snap.empty) {
@@ -50,6 +64,7 @@ export default function Upgrade() {
       } else {
         await updateDoc(doc(db, 'UserProfile', snap.docs[0].id), {
           is_pro: true,
+          user_uid: user.uid,
           pro_code_redeemed: normalized,
           pro_unlocked_at: new Date().toISOString()
         });

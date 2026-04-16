@@ -51,6 +51,7 @@ function openAIProxyPlugin() {
     }
 
     if (req.method === 'GET') {
+      let provider = 'none';
       let provider = 'unknown';
       if (skillCloudKey) provider = 'skillcloud';
       else if (siliconFlowKey) provider = 'siliconflow';
@@ -58,7 +59,7 @@ function openAIProxyPlugin() {
       else if (openaiKey) provider = 'openai';
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ ok: true, hasKey: true, provider }));
+      return res.end(JSON.stringify({ ok: provider !== 'none', hasKey: provider !== 'none', provider }));
     }
 
     if (req.method === 'POST') {
@@ -70,7 +71,8 @@ function openAIProxyPlugin() {
           req.on('error', reject);
         });
 
-        let requestBody = JSON.parse(body);
+        const parsedBody = body ? JSON.parse(body) : {};
+        let requestBody = typeof parsedBody === 'object' && parsedBody ? parsedBody : {};
         
         // Map model names for different providers
         if (skillCloudKey && requestBody.model === 'gpt-3.5-turbo') {
@@ -79,6 +81,9 @@ function openAIProxyPlugin() {
           requestBody.model = 'deepseek-ai/DeepSeek-V3';
         } else if (groqKey && requestBody.model === 'gpt-3.5-turbo') {
           requestBody.model = 'llama3-70b-8192';
+        }
+        if (requestBody.messages && !Array.isArray(requestBody.messages)) {
+          requestBody.messages = [{ role: 'user', content: String(requestBody.messages) }];
         }
 
         const proxyRes = await fetch(apiUrl, {
