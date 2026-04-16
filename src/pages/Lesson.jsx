@@ -166,6 +166,11 @@ export default function Lesson() {
       // Set last lesson date for free web
       const today = moment().format('YYYY-MM-DD');
       localStorage.setItem(`last_lesson_${user.email}`, today);
+      const freeWebKey = `free_web_end_${user.email}`;
+      const currentEnd = localStorage.getItem(freeWebKey);
+      const now = moment();
+      const base = currentEnd && moment(currentEnd).isAfter(now) ? moment(currentEnd) : now;
+      localStorage.setItem(freeWebKey, base.add(30, 'minutes').toISOString());
     }
   });
 

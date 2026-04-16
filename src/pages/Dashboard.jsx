@@ -98,6 +98,26 @@ export default function Dashboard() {
     refetchOnWindowFocus: false
   });
 
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      try {
+        const q = query(collection(db, 'UserProfile'), where('user_email', '==', user.email));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return { id: snap.docs[0].id, ...snap.docs[0].data() };
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!user?.email,
+    retry: 1,
+    staleTime: 30000,
+    refetchOnWindowFocus: false
+  });
+  const isPro = Boolean(userProfile?.is_pro);
+
   const initProgressMutation = useMutation({
     mutationFn: async () => {
       if (!user?.email) return;
@@ -137,7 +157,7 @@ export default function Dashboard() {
     if (!user) return;
     const today = moment().format('YYYY-MM-DD');
     const isTodayComplete = todaySession?.is_complete && todaySession?.session_date === today;
-    if (isTodayComplete) {
+    if (isTodayComplete && !isPro) {
       setCanStartLesson(false);
       const now = moment();
       const midnight = moment().endOf('day');
@@ -146,7 +166,7 @@ export default function Dashboard() {
     } else {
       setCanStartLesson(true);
     }
-  }, [todaySession, user]);
+  }, [todaySession, user, isPro]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -223,7 +243,7 @@ export default function Dashboard() {
           canStartLesson={canStartLesson}
           todaySession={todaySession}
           timeUntilUnlock={timeUntilUnlock}
-          isPro={false}
+          isPro={isPro}
         />
 
         <OverallProgress progressData={progressData} />

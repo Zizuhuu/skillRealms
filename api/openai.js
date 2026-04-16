@@ -2,10 +2,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const firstEnv = (...keys) => {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+};
+
 export default async function handler(req, res) {
-  const OPENAI_KEY = process.env.VITE_OPENAI_KEY || process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  const SILICON_FLOW_KEY = process.env.SILICON_FLOW_API_KEY;
+  const OPENAI_KEY = firstEnv('OPENAI_API_KEY', 'OPENAI_KEY', 'VITE_OPENAI_KEY');
+  const GROQ_KEY = firstEnv('GROQ_API_KEY', 'VITE_GROQ_API_KEY');
+  const SILICON_FLOW_KEY = firstEnv('SILICON_FLOW_API_KEY', 'SILICONFLOW_API_KEY', 'VITE_SILICON_FLOW_API_KEY');
+  const SKILLCLOUD_KEY = firstEnv('SKILLCLOUD_API_KEY', 'SKILLCLOUD_APIKEY', 'SKILLCLOUD_KEY', 'VITE_SKILLCLOUD_API_KEY');
+  const SKILLCLOUD_URL = firstEnv('SKILLCLOUD_API_URL', 'VITE_SKILLCLOUD_API_URL') || 'https://api.skillcloud.ai/v1/chat/completions';
 
   // Basic CORS support for cross-origin dev setups
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,9 +28,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     return res.status(200).json({ 
-      ok: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY), 
-      hasKey: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY), 
-      provider: SILICON_FLOW_KEY ? 'siliconflow' : GROQ_KEY ? 'groq' : 'openai'
+      ok: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY || SKILLCLOUD_KEY), 
+      hasKey: Boolean(OPENAI_KEY || GROQ_KEY || SILICON_FLOW_KEY || SKILLCLOUD_KEY), 
+      provider: SKILLCLOUD_KEY ? 'skillcloud' : SILICON_FLOW_KEY ? 'siliconflow' : GROQ_KEY ? 'groq' : 'openai'
     });
   }
 
@@ -31,7 +41,11 @@ export default async function handler(req, res) {
 
   let apiUrl, apiKey, requestBody;
 
-  if (SILICON_FLOW_KEY) {
+  if (SKILLCLOUD_KEY) {
+    apiUrl = SKILLCLOUD_URL;
+    apiKey = SKILLCLOUD_KEY;
+    requestBody = { ...req.body };
+  } else if (SILICON_FLOW_KEY) {
     apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
     apiKey = SILICON_FLOW_KEY;
     requestBody = { ...req.body };
@@ -52,11 +66,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    let requestBody = req.body;
-    
+    requestBody = typeof requestBody === 'object' && requestBody ? requestBody : {};
+
     // Map model names for different providers
-    if (SILICON_FLOW_KEY && requestBody.model === 'gpt-3.5-turbo') {
-      requestBody.model = 'Qwen/Qwen2.5-32B-Instruct';
+    if (SKILLCLOUD_KEY && requestBody.model === 'gpt-3.5-turbo') {
+      requestBody.model = 'gpt-4o-mini';
+    } else if (SILICON_FLOW_KEY && requestBody.model === 'gpt-3.5-turbo') {
+      requestBody.model = 'deepseek-ai/DeepSeek-V3';
     } else if (GROQ_KEY && requestBody.model === 'gpt-3.5-turbo') {
       requestBody.model = 'llama3-70b-8192';
     }
@@ -74,6 +90,6 @@ export default async function handler(req, res) {
     return res.status(response.status).json(data);
   } catch (error) {
     console.error('AI proxy error:', error);
-    return res.status(500).json({ error: 'AI proxy failed' });
+    return res.status(500).json({ error: 'AI proxy failed', details: error?.message || 'Unknown error' });
   }
 }

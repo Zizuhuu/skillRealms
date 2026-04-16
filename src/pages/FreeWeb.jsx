@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Globe, Youtube, MessageCircle, Search, ArrowLeft, Lock, Gamepad2, Play, Zap, Hash, Music, Infinity as InfinityIcon } from 'lucide-react';
+import { Clock, Globe, Youtube, Search, ArrowLeft, Lock, Gamepad2, Play, Zap, Hash, Music, Infinity as InfinityIcon } from 'lucide-react';
 import moment from 'moment';
 
 export default function FreeWeb() {
@@ -24,7 +24,7 @@ export default function FreeWeb() {
     return unsub;
   }, [navigate]);
 
-  const { data: progressData = [] } = useQuery({
+  const { data: progressData = [], isLoading: progressLoading } = useQuery({
     queryKey: ['learningProgress', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
@@ -41,7 +41,7 @@ export default function FreeWeb() {
     staleTime: 60000
   });
 
-  const { data: userProfile } = useQuery({
+  const { data: userProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['userProfile', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
@@ -59,7 +59,7 @@ export default function FreeWeb() {
     staleTime: 60000
   });
 
-  const isGEDComplete = progressData.every(p => p.current_lesson > 30);
+  const isGEDComplete = progressData.length > 0 && progressData.every(p => p.current_lesson > 30);
   const isPro = userProfile?.is_pro || false;
   const hasPermanentAccess = isPro || isGEDComplete;
   const freeWebDuration = 1800; // 30 minutes for free users after each lesson
@@ -130,8 +130,9 @@ export default function FreeWeb() {
     { id: 'reddit', label: 'Reddit', icon: Hash, url: 'https://www.reddit.com/' },
     { id: 'tiktok', label: 'TikTok', icon: Music, url: 'https://www.tiktok.com/' },
   ];
+  const currentTabConfig = tabs.find(t => t.id === currentTab) || tabs[0];
 
-  if (!user) {
+  if (!user || progressLoading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -232,8 +233,28 @@ export default function FreeWeb() {
               ))}
             </div>
           </div>
-          <div className="h-[calc(100vh-200px)]">
-            <iframe src={tabs.find(t => t.id === currentTab).url} className="w-full h-full border-0" />
+          <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">
+              Some websites block in-app embedding. If a page is blank, open it in a new tab.
+            </p>
+            <a
+              href={currentTabConfig.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              Open {currentTabConfig.label}
+            </a>
+          </div>
+          <div className="h-[calc(100vh-270px)]">
+            <iframe
+              key={currentTabConfig.id}
+              src={currentTabConfig.url}
+              title={`${currentTabConfig.label} preview`}
+              className="w-full h-full border-0"
+              referrerPolicy="no-referrer"
+            />
           </div>
         </div>
       </main>
