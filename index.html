@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>skillRealms</title>
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const { useState, useEffect } = React;
+      
+      // Simple Home Component
+      function Home({ setPage }) {
+        return React.createElement('div', { style: { padding: '40px', backgroundColor: 'white', minHeight: '100vh' } },
+          React.createElement('h1', { style: { color: 'blue', fontSize: '48px', marginBottom: '20px' } }, 'skillRealms'),
+          React.createElement('p', { style: { color: 'black', fontSize: '24px', marginBottom: '40px' } }, 'Welcome to skillRealms - Your Learning Platform'),
+          React.createElement('div', { style: { marginTop: '30px' } },
+            React.createElement('button', { onClick: () => setPage('dashboard'), style: { padding: '20px', backgroundColor: 'blue', color: 'white', fontSize: '18px', display: 'block', marginBottom: '10px', cursor: 'pointer', width: '300px' } }, 'Go to Dashboard'),
+            React.createElement('button', { onClick: () => setPage('freeweb'), style: { padding: '20px', backgroundColor: 'green', color: 'white', fontSize: '18px', display: 'block', marginBottom: '10px', cursor: 'pointer', width: '300px' } }, 'Free Web'),
+            React.createElement('button', { onClick: () => setPage('games'), style: { padding: '20px', backgroundColor: 'purple', color: 'white', fontSize: '18px', display: 'block', cursor: 'pointer', width: '300px' } }, 'Games')
+          )
+        );
+      }
+      
+      // Dashboard Component
+      function Dashboard({ setPage }) {
+        return React.createElement('div', { style: { padding: '40px', backgroundColor: 'white', minHeight: '100vh' } },
+          React.createElement('h1', { style: { color: 'blue', fontSize: '48px', marginBottom: '20px' } }, 'Dashboard'),
+          React.createElement('div', { style: { marginTop: '30px' } },
+            React.createElement('button', { onClick: () => setPage('freeweb'), style: { padding: '20px', backgroundColor: 'green', color: 'white', fontSize: '18px', display: 'block', marginBottom: '10px', cursor: 'pointer', width: '300px' } }, 'Free Web'),
+            React.createElement('button', { onClick: () => setPage('realmpad'), style: { padding: '20px', backgroundColor: 'purple', color: 'white', fontSize: '18px', display: 'block', marginBottom: '10px', cursor: 'pointer', width: '300px' } }, 'RealmPad'),
+            React.createElement('button', { onClick: () => setPage('games'), style: { padding: '20px', backgroundColor: 'orange', color: 'white', fontSize: '18px', display: 'block', marginBottom: '10px', cursor: 'pointer', width: '300px' } }, 'Games'),
+            React.createElement('button', { onClick: () => setPage('home'), style: { padding: '20px', backgroundColor: 'gray', color: 'white', fontSize: '18px', display: 'block', cursor: 'pointer', width: '300px' } }, 'Back to Home')
+          )
+        );
+      }
+      
+      // FreeWeb Component
+      function FreeWeb({ setPage }) {
+        const [activeTab, setActiveTab] = useState('browser');
+        
+        return React.createElement('div', { style: { padding: '20px', backgroundColor: 'white', minHeight: '100vh' } },
+          React.createElement('h1', { style: { color: 'green', fontSize: '36px', marginBottom: '20px' } }, 'Free Web'),
+          React.createElement('div', { style: { marginBottom: '20px' } },
+            React.createElement('button', { onClick: () => setActiveTab('browser'), style: { padding: '10px 20px', backgroundColor: activeTab === 'browser' ? 'green' : 'gray', color: 'white', fontSize: '16px', marginRight: '10px', cursor: 'pointer' } }, 'Web Browser'),
+            React.createElement('button', { onClick: () => setActiveTab('vps'), style: { padding: '10px 20px', backgroundColor: activeTab === 'vps' ? 'green' : 'gray', color: 'white', fontSize: '16px', cursor: 'pointer' } }, 'VPS Desktop')
+          ),
+          React.createElement('div', { style: { border: '2px solid green', borderRadius: '10px', padding: '20px', minHeight: '400px', backgroundColor: '#f0f0f0' } },
+            activeTab === 'browser' ? 
+              React.createElement('div', null,
+                React.createElement('p', { style: { color: 'black', fontSize: '18px' } }, 'Web Browser Tab'),
+                React.createElement('iframe', { src: 'https://www.google.com', style: { width: '100%', height: '500px', border: '1px solid #ccc', marginTop: '10px' }, title: 'Web Browser' })
+              ) :
+              React.createElement('div', null,
+                React.createElement('p', { style: { color: 'black', fontSize: '18px' } }, 'VPS Desktop Tab'),
+                React.createElement('div', { style: { padding: '20px', backgroundColor: '#e0e0e0', minHeight: '400px', marginTop: '10px' } },
+                  React.createElement('p', { style: { color: 'black', fontSize: '16px' } }, 'VPS Desktop Interface')
+                )
+              )
+          ),
+          React.createElement('button', { onClick: () => setPage('dashboard'), style: { padding: '15px', backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '20px', cursor: 'pointer' } }, 'Back to Dashboard')
+        );
+      }
+      
+      // Games Component
+      function Games({ setPage }) {
+        const games = [
+          { id: 1, name: 'HTML Games Collection', description: 'Complete collection of HTML5 games!' },
+          { id: 2, name: 'GTA Vice City', description: 'Classic GTA Vice City gameplay!' }
+        ];
+        
+        return React.createElement('div', { style: { padding: '40px', backgroundColor: 'white', minHeight: '100vh' } },
+          React.createElement('h1', { style: { color: 'purple', fontSize: '48px', marginBottom: '20px' } }, 'Games'),
+          React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '30px' } },
+            games.map(game => 
+              React.createElement('div', { key: game.id, style: { border: '2px solid purple', borderRadius: '10px', padding: '20px', backgroundColor: '#f0f0f0' } },
+                React.createElement('h3', { style: { color: 'purple', fontSize: '24px', marginBottom: '10px' } }, game.name),
+                React.createElement('p', { style: { color: 'black', fontSize: '16px', marginBottom: '15px' } }, game.description),
+                React.createElement('button', { style: { padding: '10px 20px', backgroundColor: 'purple', color: 'white', fontSize: '16px', cursor: 'pointer' } }, 'Play Now')
+              )
+            )
+          ),
+          React.createElement('button', { onClick: () => setPage('dashboard'), style: { padding: '15px', backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '20px', cursor: 'pointer' } }, 'Back to Dashboard')
+        );
+      }
+      
+      // RealmPad Component
+      function RealmPad({ setPage }) {
+        return React.createElement('div', { style: { padding: '40px', backgroundColor: 'white', minHeight: '100vh' } },
+          React.createElement('h1', { style: { color: 'purple', fontSize: '48px', marginBottom: '20px' } }, 'RealmPad'),
+          React.createElement('p', { style: { color: 'black', fontSize: '24px', marginBottom: '40px' } }, 'Your personal workspace'),
+          React.createElement('div', { style: { border: '2px solid purple', borderRadius: '10px', padding: '20px', minHeight: '400px', backgroundColor: '#f0f0f0' } },
+            React.createElement('p', { style: { color: 'black', fontSize: '18px' } }, 'RealmPad Workspace')
+          ),
+          React.createElement('button', { onClick: () => setPage('dashboard'), style: { padding: '15px', backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '20px', cursor: 'pointer' } }, 'Back to Dashboard')
+        );
+      }
+      
+      // Main App Component
+      function App() {
+        const [page, setPage] = useState('home');
+        
+        if (page === 'home') {
+          return React.createElement(Home, { setPage });
+        } else if (page === 'dashboard') {
+          return React.createElement(Dashboard, { setPage });
+        } else if (page === 'freeweb') {
+          return React.createElement(FreeWeb, { setPage });
+        } else if (page === 'games') {
+          return React.createElement(Games, { setPage });
+        } else if (page === 'realmpad') {
+          return React.createElement(RealmPad, { setPage });
+        } else {
+          return React.createElement(Home, { setPage });
+        }
+      }
+      
+      ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+  </body>
+</html>

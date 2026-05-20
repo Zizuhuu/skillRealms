@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.*
+dist/
+*.log
+debug-*.js
+test-*.js
+verify-env.md
+setup-api-keys.md
+env-fix-guide.md
+replace-env-instructions.md
+DEPLOYMENT.md
+.vercel
+.env*.local
+
+
