@@ -201,7 +201,7 @@ function safeJsonParse(raw) {
       
       // Simple text-based extraction - just get what we can
       const result = {
-        title: 'Generated Lesson',
+        title: 'Lesson',
         reading: '',
         questions: []
       };
@@ -496,7 +496,7 @@ Complete the entire lesson before responding.`;
           // It's plain text, create a lesson structure
           console.log('Lesson response is plain text, creating lesson structure');
           result = {
-            title: "Generated Lesson",
+            title: "Lesson",
             content: result,
             type: "text",
             sections: [
@@ -620,7 +620,7 @@ Complete the entire lesson before responding.`;
         
         result.__fallbackReason = null;
         localStorage.setItem(cacheKey, JSON.stringify(result));
-        console.log(`Successfully generated complete lesson with ${result.questions.length} questions`);
+        console.log(`Successfully loaded complete lesson with ${result.questions.length} questions`);
         return result;
       }
 
@@ -792,7 +792,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
               </div>
               <div>
                 <p className="font-semibold">Lesson service unavailable ({visibleFallbackReason})</p>
-                <p className="mt-1">Showing trusted built-in lesson content. To enable live generated lessons, configure API keys in your env settings.</p>
+                <p className="mt-1">Showing trusted built-in lesson content. To enable live lesson loading, configure API keys in your env settings.</p>
                 <details className="mt-2">
                   <summary className="cursor-pointer text-yellow-700 hover:text-yellow-800">Setup instructions</summary>
                   <div className="mt-2 text-xs space-y-1 bg-yellow-100 rounded p-2">
