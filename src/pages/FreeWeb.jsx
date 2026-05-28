@@ -7,7 +7,7 @@ import { auth, db } from '../firebase';
 import moment from 'moment';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { Gamepad2, Trophy, Star, Zap, Target, Shield, Heart, Flame, Crown, Rocket, Play, Globe, Lock, Clock, Infinity } from 'lucide-react';
+import { ArrowLeft, Gamepad2, Trophy, Star, Zap, Target, Shield, Heart, Flame, Crown, Rocket, Play, Globe, Lock, Clock, Infinity } from 'lucide-react';
 
 export default function FreeWeb() {
   const [user, setUser] = useState(null);
