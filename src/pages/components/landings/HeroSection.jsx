@@ -24,17 +24,30 @@ export default function HeroSection() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
+      if (!auth) {
+        setError('Login is temporarily unavailable. Firebase is not configured on this deployment.');
+        return;
+      }
       await signInWithEmailAndPassword(auth, email, password);
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. Please try again.');
+      if (err.code === 'auth/invalid-credential') setError('Incorrect email or password.');
+      else if (err.code === 'auth/user-not-found') setError('No account found for that email.');
+      else if (err.code === 'auth/wrong-password') setError('Incorrect email or password.');
+      else if (err.code === 'auth/too-many-requests') setError('Too many attempts. Try again in a few minutes.');
+      else if (err.code === 'auth/network-request-failed') setError('Network error. Check your internet connection.');
+      else setError(err?.message || 'Login failed. Please try again.');
     } finally { setLoading(false); }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    if (!auth) {
+      setError('Registration is temporarily unavailable. Firebase is not configured on this deployment.');
+      return;
+    }
     if (!fullName.trim()) { setError('Please enter your name.'); return; }
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
