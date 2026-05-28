@@ -13,7 +13,7 @@ import moment from 'moment';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SUBJECTS = ['math', 'english', 'science', 'social_studies', 'health'];
-const PRO_SUBJECT_MAP = { financial_literacy: 'math', coding_basics: 'math', digital_art: 'english', job_readiness: 'english' };
+const PRO_SUBJECTS = ['financial_literacy', 'coding_basics', 'digital_art', 'job_readiness'];
 
 const subjectConfig = {
   math: { name: "Mathematics", icon: Calculator, color: "from-blue-500 to-blue-600" },
@@ -30,7 +30,7 @@ const subjectConfig = {
 export default function Lesson() {
   const urlParams = new URLSearchParams(window.location.search);
   const subjectParam = urlParams.get('subject');
-  const isProStandalone = subjectParam && PRO_SUBJECT_MAP.hasOwnProperty(subjectParam);
+  const isProStandalone = Boolean(subjectParam && PRO_SUBJECTS.includes(subjectParam));
   const initialIndex = (!isProStandalone && subjectParam) ? Math.max(0, SUBJECTS.indexOf(subjectParam)) : 0;
 
   const [user, setUser] = useState(null);
@@ -108,6 +108,12 @@ export default function Lesson() {
     retry: 2,
     staleTime: 60000
   });
+  const isProUser = Boolean(userProfile?.is_pro) || (import.meta.env.VITE_FIREBASE_PROJECT_ID === 'skillway-1125b' && user?.email && localStorage.getItem('skillRealms_pro_user') === user.email);
+
+  const currentSubject = isProStandalone ? subjectParam : SUBJECTS[currentSubjectIndex];
+  const config = subjectConfig[currentSubject];
+  const Icon = config?.icon;
+  const currentProgress = progressData.find(p => p.subject === currentSubject);
 
   useEffect(() => {
     if (!user || !todaySession?.subjects_completed) return;
@@ -116,25 +122,48 @@ export default function Lesson() {
     else if (todaySession.is_complete) setShowCompletion(true);
   }, [todaySession, user]);
 
+  useEffect(() => {
+    if (!user?.email || !currentSubject || !progressData) return;
+
+    const ensureProgress = async () => {
+      const existing = progressData.find(p => p.subject === currentSubject);
+      if (existing) return;
+
+      await addDoc(collection(db, 'LearningProgress'), {
+        user_email: user.email,
+        subject: currentSubject,
+        current_lesson: 1,
+        total_lessons: PRO_SUBJECTS.includes(currentSubject) ? 20 : 30,
+        completed_lessons: []
+      });
+      queryClient.invalidateQueries(['learningProgress']);
+    };
+
+    ensureProgress().catch((err) => console.error('Failed to initialize subject progress:', err));
+  }, [user?.email, currentSubject, progressData, queryClient]);
+
   const completeSubjectMutation = useMutation({
-    mutationFn: async (subject) => {
+    mutationFn: async ({ subject, proStandalone }) => {
       const today = moment().format('YYYY-MM-DD');
       const timeSpent = Math.round((Date.now() - startTime) / 60000);
 
-      if (!todaySession) {
-        await addDoc(collection(db, 'DailySession'), {
-          user_email: user.email, session_date: today,
-          subjects_completed: [subject], time_spent_minutes: timeSpent, is_complete: false
-        });
-      } else {
-        const alreadyDone = (todaySession.subjects_completed || []).includes(subject);
-        const updatedSubjects = alreadyDone ? todaySession.subjects_completed : [...(todaySession.subjects_completed || []), subject];
-        const isComplete = updatedSubjects.length >= SUBJECTS.length;
-        await updateDoc(doc(db, 'DailySession', todaySession.id), {
-          subjects_completed: updatedSubjects,
-          time_spent_minutes: (todaySession.time_spent_minutes || 0) + timeSpent,
-          is_complete: isComplete
-        });
+      // Daily session is only for core GED track.
+      if (!proStandalone) {
+        if (!todaySession) {
+          await addDoc(collection(db, 'DailySession'), {
+            user_email: user.email, session_date: today,
+            subjects_completed: [subject], time_spent_minutes: timeSpent, is_complete: false
+          });
+        } else {
+          const alreadyDone = (todaySession.subjects_completed || []).includes(subject);
+          const updatedSubjects = alreadyDone ? todaySession.subjects_completed : [...(todaySession.subjects_completed || []), subject];
+          const isComplete = updatedSubjects.length >= SUBJECTS.length;
+          await updateDoc(doc(db, 'DailySession', todaySession.id), {
+            subjects_completed: updatedSubjects,
+            time_spent_minutes: (todaySession.time_spent_minutes || 0) + timeSpent,
+            is_complete: isComplete
+          });
+        }
       }
 
       const subjectProgress = progressData.find(p => p.subject === subject);
@@ -171,20 +200,22 @@ export default function Lesson() {
       // Set last lesson date for free web
       const today = moment().format('YYYY-MM-DD');
       localStorage.setItem(`last_lesson_${user.email}`, today);
-      const freeWebKey = `free_web_end_${user.email}`;
-      const currentEnd = localStorage.getItem(freeWebKey);
-      const now = moment();
-      const base = currentEnd && moment(currentEnd).isAfter(now) ? moment(currentEnd) : now;
-      localStorage.setItem(freeWebKey, base.add(30, 'minutes').toISOString());
+      if (!isProStandalone) {
+        const freeWebKey = `free_web_end_${user.email}`;
+        const currentEnd = localStorage.getItem(freeWebKey);
+        const now = moment();
+        const base = currentEnd && moment(currentEnd).isAfter(now) ? moment(currentEnd) : now;
+        localStorage.setItem(freeWebKey, base.add(30, 'minutes').toISOString());
+      }
     }
   });
 
-  const handleLessonComplete = () => completeSubjectMutation.mutate(SUBJECTS[currentSubjectIndex]);
-
-  const currentSubject = isProStandalone ? subjectParam : SUBJECTS[currentSubjectIndex];
-  const contentSubject = PRO_SUBJECT_MAP[currentSubject] || currentSubject;
-  const config = subjectConfig[currentSubject];
-  const Icon = config?.icon;
+  const handleLessonComplete = () => {
+    completeSubjectMutation.mutate(
+      { subject: currentSubject, proStandalone: isProStandalone },
+      { onSuccess: () => { if (isProStandalone) setShowCompletion(true); } }
+    );
+  };
 
   if (showCompletion) {
     return (
@@ -229,7 +260,7 @@ export default function Lesson() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">{config.name}</h1>
-                <p className="text-white/80 text-sm">Lesson {progressData.find(p => p.subject === currentSubject)?.current_lesson || 1}</p>
+                <p className="text-white/80 text-sm">Lesson {currentProgress?.current_lesson || 1}</p>
               </div>
             </div>
           </div>
@@ -250,11 +281,11 @@ export default function Lesson() {
         <AnimatePresence mode="wait">
           <motion.div key={currentSubject} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <LessonContent
-              subject={contentSubject}
+              subject={currentSubject}
               displaySubject={currentSubject}
-              lessonNumber={progressData.find(p => p.subject === contentSubject)?.current_lesson || 1}
-              onComplete={isProStandalone ? () => setShowCompletion(true) : handleLessonComplete}
-              isPro={userProfile?.is_pro || (import.meta.env.VITE_FIREBASE_PROJECT_ID === 'skillway-1125b' && user?.email && localStorage.getItem('skillRealms_pro_user') === user.email)}
+              lessonNumber={currentProgress?.current_lesson || 1}
+              onComplete={handleLessonComplete}
+              isPro={isProUser}
             />
           </motion.div>
         </AnimatePresence>

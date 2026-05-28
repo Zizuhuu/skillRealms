@@ -102,6 +102,82 @@ Science explains how nature works using observation and evidence.
       { question: "What is the BEST way to prevent spread of cold and flu?", options: ["Take vitamins", "Avoid going outside", "Wash hands frequently with soap", "Drink coffee"], correct: 2, explanation: "Regular handwashing is the most effective prevention." },
       { question: "What does 'calories' measure in food?", options: ["Amount of fat", "Amount of energy food provides", "Vitamin content", "How fast food is digested"], correct: 1, explanation: "Calories measure the energy content of food." }
     ]
+  },
+  financial_literacy: {
+    title: "Budgeting, Saving, and Credit Basics",
+    reading: `**Money Skills for Everyday Life**
+
+Financial literacy means knowing how to earn, spend, save, and protect your money.
+
+**Budgeting:** A budget is a plan for your money. Start with income, then list expenses. Needs (rent, food, transport) come first; wants come after.
+
+**Savings:** Build an emergency fund over time. Even small weekly savings can grow and prevent debt during emergencies.
+
+**Credit:** Credit lets you borrow now and pay later. Paying on time helps your credit score; late payments and high balances can hurt it.`,
+    questions: [
+      { question: "What is the main purpose of a budget?", options: ["To avoid all spending", "To track and plan income and expenses", "To raise your credit limit", "To eliminate taxes"], correct: 1, explanation: "A budget helps you plan and control spending." },
+      { question: "Which habit helps your credit score the most?", options: ["Missing payments", "Paying bills on time", "Opening many cards quickly", "Ignoring statements"], correct: 1, explanation: "On-time payment history is a major credit factor." },
+      { question: "An emergency fund is best used for:", options: ["Concert tickets", "Unexpected car repair", "Luxury shopping", "Vacation upgrades"], correct: 1, explanation: "Emergency funds are for unexpected essential costs." },
+      { question: "If income is $2,000 and expenses are $1,700, your monthly surplus is:", options: ["$200", "$300", "$500", "$700"], correct: 1, explanation: "$2,000 - $1,700 = $300." },
+      { question: "What does interest on a loan mean?", options: ["A discount from the lender", "Money paid for borrowing", "Free bonus cash", "A tax refund"], correct: 1, explanation: "Interest is the cost of borrowing money." }
+    ]
+  },
+  coding_basics: {
+    title: "Coding Logic and Problem Solving",
+    reading: `**How Coding Works**
+
+Code is a set of instructions computers follow exactly.
+
+**Variables:** Variables store information, like a name or number, so your program can reuse it.
+
+**Conditionals:** If/else logic helps programs make decisions.
+
+**Loops:** Loops repeat actions until a condition changes, which saves time and avoids repeated code.`,
+    questions: [
+      { question: "What is a variable used for in programming?", options: ["Deleting files", "Storing data values", "Changing internet speed", "Installing software"], correct: 1, explanation: "Variables hold values for later use." },
+      { question: "An if/else statement helps a program:", options: ["Play videos", "Make decisions based on conditions", "Print hardware labels", "Fix all bugs automatically"], correct: 1, explanation: "if/else branches code based on true/false conditions." },
+      { question: "A loop is most useful when you need to:", options: ["Repeat the same action many times", "Turn off a computer", "Create user accounts", "Design logos"], correct: 0, explanation: "Loops handle repetition efficiently." },
+      { question: "Which is a common debugging strategy?", options: ["Guess randomly", "Read errors and test step by step", "Delete most of the code", "Ignore warnings"], correct: 1, explanation: "Systematic testing and reading errors is best practice." },
+      { question: "Algorithms are:", options: ["Computer brands", "Step-by-step procedures to solve problems", "Only math formulas", "Types of passwords"], correct: 1, explanation: "An algorithm is an ordered method for solving a task." }
+    ]
+  },
+  digital_art: {
+    title: "Design Principles and Visual Communication",
+    reading: `**Digital Art Essentials**
+
+Design communicates ideas visually through color, layout, and typography.
+
+**Color:** Colors create mood and emphasis. Contrast helps text and key elements stand out.
+
+**Typography:** Fonts affect readability and tone. Use clear hierarchy with headings, subheadings, and body text.
+
+**Composition:** Good layout guides the viewer's eye and keeps designs balanced and clean.`,
+    questions: [
+      { question: "Why is contrast important in design?", options: ["It makes files larger", "It improves readability and emphasis", "It removes color", "It slows rendering"], correct: 1, explanation: "Contrast helps important elements stand out clearly." },
+      { question: "Typography hierarchy means:", options: ["Using one font size only", "Organizing text levels for clarity", "Avoiding all headings", "Writing in all caps"], correct: 1, explanation: "Hierarchy guides readers through content structure." },
+      { question: "What is composition in design?", options: ["Only picking colors", "Arranging visual elements intentionally", "Installing design apps", "Saving to PNG"], correct: 1, explanation: "Composition is layout and visual arrangement." },
+      { question: "A balanced layout usually feels:", options: ["Chaotic", "Hard to read", "Stable and clear", "Random"], correct: 2, explanation: "Balanced visuals improve clarity and user comfort." },
+      { question: "Which choice helps accessibility most?", options: ["Low contrast text", "Tiny fonts", "Readable text size with strong contrast", "Busy backgrounds behind text"], correct: 2, explanation: "Accessibility improves with readable size and contrast." }
+    ]
+  },
+  job_readiness: {
+    title: "Resume, Interview, and Workplace Skills",
+    reading: `**Getting Job Ready**
+
+Job readiness means preparing to apply, interview, and succeed at work.
+
+**Resume:** A resume highlights skills, experience, and accomplishments. Keep it clear and tailored to the role.
+
+**Interviewing:** Use examples from real situations to show reliability, teamwork, and problem-solving.
+
+**Workplace Skills:** Communication, punctuality, and professionalism build trust and long-term growth.`,
+    questions: [
+      { question: "A strong resume should be:", options: ["Long and generic", "Clear, relevant, and tailored", "Only personal hobbies", "All caps text"], correct: 1, explanation: "Tailored resumes match the job and show relevant strengths." },
+      { question: "In interviews, STAR responses help you:", options: ["Tell random stories", "Give structured examples", "Avoid questions", "Skip details"], correct: 1, explanation: "STAR provides clear Situation, Task, Action, Result answers." },
+      { question: "Professional communication includes:", options: ["Late replies and slang", "Clear, respectful messages", "Ignoring instructions", "Arguing publicly"], correct: 1, explanation: "Professionalism is respectful and clear communication." },
+      { question: "Punctuality at work mainly shows:", options: ["Lack of interest", "Reliability and respect", "Nothing important", "That traffic is easy"], correct: 1, explanation: "Being on time signals dependability." },
+      { question: "If you make a mistake at work, best first step is:", options: ["Hide it", "Blame a coworker", "Own it and communicate a fix", "Quit immediately"], correct: 2, explanation: "Accountability plus action builds trust." }
+    ]
   }
 };
 
@@ -130,6 +206,26 @@ const practiceQuizBank = {
     { question: "How many cups of water should adults drink daily?", options: ["2-3 cups", "4-5 cups", "About 8 cups", "12+ cups"], correct: 2, explanation: "About 8 cups (64 oz) daily." },
     { question: "Which vitamin does sunlight help your body produce?", options: ["Vitamin A", "Vitamin C", "Vitamin D", "Vitamin B12"], correct: 2, explanation: "Sunlight triggers vitamin D production." },
     { question: "What is the normal resting heart rate for adults?", options: ["20-40 bpm", "60-100 bpm", "100-120 bpm", "40-60 bpm"], correct: 1, explanation: "Normal resting heart rate is 60-100 bpm." }
+  ],
+  financial_literacy: [
+    { question: "If you earn $500 weekly and save 10%, how much is saved?", options: ["$5", "$25", "$50", "$100"], correct: 2, explanation: "10% of $500 is $50." },
+    { question: "Which debt is usually most expensive?", options: ["Low-interest student loan", "High-interest credit card balance", "Mortgage", "No-interest payment plan"], correct: 1, explanation: "Credit cards often have the highest rates." },
+    { question: "A good first money goal is:", options: ["Buy luxury items", "Build a starter emergency fund", "Ignore bills", "Take random loans"], correct: 1, explanation: "Emergency savings improves financial stability." }
+  ],
+  coding_basics: [
+    { question: "Which data type usually stores true/false?", options: ["String", "Boolean", "Array", "Object"], correct: 1, explanation: "Booleans represent true/false values." },
+    { question: "What does a syntax error mean?", options: ["Slow internet", "Code rules/format are invalid", "Database is full", "Keyboard is broken"], correct: 1, explanation: "Syntax errors occur when code breaks language rules." },
+    { question: "Functions are useful because they:", options: ["Repeat reusable logic", "Always run faster than loops", "Delete bugs automatically", "Only work in Python"], correct: 0, explanation: "Functions package reusable logic." }
+  ],
+  digital_art: [
+    { question: "White space in design means:", options: ["Wasted area", "Intentional empty space for clarity", "Only white color", "A print error"], correct: 1, explanation: "White space improves readability and focus." },
+    { question: "A brand style guide usually defines:", options: ["Employee salaries", "Colors, fonts, and visual rules", "Code dependencies", "Server ports"], correct: 1, explanation: "Style guides keep visual identity consistent." },
+    { question: "Which export is common for logos with transparency?", options: ["TXT", "PNG", "CSV", "MP3"], correct: 1, explanation: "PNG supports transparency." }
+  ],
+  job_readiness: [
+    { question: "A follow-up email after an interview should be sent:", options: ["Within 24 hours", "After 3 months", "Never", "Only if rejected"], correct: 0, explanation: "Prompt thank-you follow-up is professional." },
+    { question: "Which is a strong interview response style?", options: ["One-word answers", "Specific examples with outcomes", "Changing the topic", "Reading from notes only"], correct: 1, explanation: "Specific examples demonstrate real skill." },
+    { question: "Networking can help by:", options: ["Guaranteeing any job", "Creating opportunities and referrals", "Replacing all skills", "Avoiding resumes"], correct: 1, explanation: "Networking expands opportunities and visibility." }
   ]
 };
 
@@ -390,7 +486,11 @@ async function generateAILesson(subject, lessonNumber, isProUser = false) {
       english: ['reading comprehension and main idea', 'grammar and punctuation rules', 'vocabulary in context', 'essay writing and organization', 'inference and text evidence'],
       science: ['cell biology and life processes', 'ecosystems and food webs', 'chemistry and states of matter', 'physics forces and motion', 'earth science and environment'],
       social_studies: ['U.S. Constitution and government branches', 'American founding era', 'Civil War and Reconstruction', 'economics and financial literacy', 'world geography and cultures'],
-      health: ['nutrition and balanced diet', 'mental health and stress management', 'disease prevention and vaccines', 'substance use effects and recovery', 'exercise science and fitness']
+      health: ['nutrition and balanced diet', 'mental health and stress management', 'disease prevention and vaccines', 'substance use effects and recovery', 'exercise science and fitness'],
+      financial_literacy: ['budgeting basics', 'credit scores and credit reports', 'banking and savings', 'debt management', 'consumer protection and fraud'],
+      coding_basics: ['variables and data types', 'conditionals and logic', 'loops and iteration', 'functions and decomposition', 'debugging fundamentals'],
+      digital_art: ['color theory and contrast', 'typography and hierarchy', 'layout and composition', 'branding basics', 'accessibility in design'],
+      job_readiness: ['resume writing essentials', 'interview strategy', 'professional communication', 'time management at work', 'teamwork and conflict resolution']
     };
 
     const topics = subjectTopics[subject] || subjectTopics.math;
