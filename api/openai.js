@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       ok: Boolean(groqKey || geminiKey), 
       hasKey: Boolean(groqKey || geminiKey), 
       provider: 'groq',
-      message: groqKey || geminiKey ? null : 'No AI API key configured'
+      message: groqKey || geminiKey ? null : 'No lesson API key configured'
     });
   }
 
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     try {
       if (!groqKey && !geminiKey) {
         return res.status(500).json({
-          error: 'AI key not configured',
+          error: 'Lesson key not configured',
           message: 'Set GROQ_API_KEY (or GEMINI_API_KEY) in server environment variables'
         });
       }
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
 
       // If both fail, return error
       return res.status(500).json({ 
-        error: 'AI service unavailable',
+        error: 'Lesson service unavailable',
         message: 'Groq request failed and no working fallback was available'
       });
     } catch (error) {

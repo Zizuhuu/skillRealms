@@ -201,7 +201,7 @@ function safeJsonParse(raw) {
       
       // Simple text-based extraction - just get what we can
       const result = {
-        title: 'AI Generated Lesson',
+        title: 'Generated Lesson',
         reading: '',
         questions: []
       };
@@ -467,21 +467,21 @@ Complete the entire lesson before responding.`;
       }
 
       if (!res.ok) {
-        console.warn('AI request failed with status', res.status, 'falling back to local lesson');
-        return { ...getFallbackLesson(subject), __fallbackReason: `AI request failed (${res.status})` };
+        console.warn('Lesson request failed with status', res.status, 'falling back to local lesson');
+        return { ...getFallbackLesson(subject), __fallbackReason: `Lesson request failed (${res.status})` };
       }
 
       const json = await res.json();
       let result = json?.choices?.[0]?.message?.content ?? json?.choices?.[0]?.message;
       
-      // Debug logging for AI response
-      console.log('AI Response:', json);
+      // Debug logging for lesson response
+      console.log('Lesson response:', json);
       console.log('Result content:', result);
       
       // Handle different response formats
       if (typeof result === 'string') {
         // Check if it's JSON or plain text
-        console.log('Parsing AI response string length:', result.length);
+        console.log('Parsing lesson response string length:', result.length);
         console.log('First 200 chars:', result.substring(0, 200));
         console.log('Last 200 chars:', result.substring(result.length - 200));
         
@@ -494,9 +494,9 @@ Complete the entire lesson before responding.`;
           result = parsedResult;
         } else {
           // It's plain text, create a lesson structure
-          console.log('AI response is plain text, creating lesson structure');
+          console.log('Lesson response is plain text, creating lesson structure');
           result = {
-            title: "AI Generated Lesson",
+            title: "Generated Lesson",
             content: result,
             type: "text",
             sections: [
@@ -511,7 +511,7 @@ Complete the entire lesson before responding.`;
       }
       
       if (!result) {
-        return { ...getFallbackLesson(subject), __fallbackReason: 'AI response was not valid JSON' };
+        return { ...getFallbackLesson(subject), __fallbackReason: 'Response was not valid JSON' };
       }
       
       if (result && typeof result === 'object') {
@@ -525,8 +525,8 @@ Complete the entire lesson before responding.`;
         console.warn('API detail error response; using fallback', json.detail);
         return { ...getFallbackLesson(subject), __fallbackReason: `API error: ${json.detail}` };
       } else {
-        console.warn('Unexpected AI response format; using fallback', json);
-        return { ...getFallbackLesson(subject), __fallbackReason: 'Unexpected AI response format' };
+        console.warn('Unexpected response format; using fallback', json);
+        return { ...getFallbackLesson(subject), __fallbackReason: 'Unexpected response format' };
       }
 
       if (result?.title && result?.reading) {
@@ -571,13 +571,13 @@ Complete the entire lesson before responding.`;
           console.warn('Lesson is incomplete, using fallback lesson');
           return { 
             ...getFallbackLesson(subject), 
-            __fallbackReason: 'AI lesson was incomplete - using fallback content' 
+            __fallbackReason: 'Lesson content was incomplete - using fallback content' 
           };
         }
         
         // Validate and fix incomplete lessons
         if (!result.questions || !Array.isArray(result.questions) || result.questions.length === 0) {
-          console.warn('No questions found in AI response, adding fallback questions');
+          console.warn('No questions found in response, adding fallback questions');
           result.questions = getFallbackLesson(subject).questions;
         } else {
           // Ensure each question has all required fields
@@ -625,11 +625,11 @@ Complete the entire lesson before responding.`;
       }
 
       console.warn('Lesson response did not contain valid lesson content, using fallback');
-      return { ...getFallbackLesson(subject), __fallbackReason: 'AI response missing lesson fields' };
+      return { ...getFallbackLesson(subject), __fallbackReason: 'Response missing lesson fields' };
     }
   catch (err) {
     console.warn('Lesson request failed, falling back to local lesson', err);
-    return { ...getFallbackLesson(subject), __fallbackReason: 'AI request failed; using local lesson' };
+    return { ...getFallbackLesson(subject), __fallbackReason: 'Lesson request failed; using local lesson' };
   }
 }
 
@@ -737,6 +737,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   }
 
   const aiUnavailable = Boolean(fallbackReason);
+  const visibleFallbackReason = String(fallbackReason || '').replace(/\bai\b/gi, 'lesson service');
   const data = aiLesson || getFallbackLesson(subject);
   const safeData = {
     title: typeof data.title === 'string' ? data.title : 'Lesson Title',
@@ -790,8 +791,8 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
                 <span className="text-yellow-700 text-xs">!</span>
               </div>
               <div>
-                <p className="font-semibold">AI lesson unavailable ({fallbackReason})</p>
-                <p className="mt-1">Showing trusted built-in lesson content. For AI-powered lessons, configure API keys in your .env file.</p>
+                <p className="font-semibold">Lesson service unavailable ({visibleFallbackReason})</p>
+                <p className="mt-1">Showing trusted built-in lesson content. To enable live generated lessons, configure API keys in your env settings.</p>
                 <details className="mt-2">
                   <summary className="cursor-pointer text-yellow-700 hover:text-yellow-800">Setup instructions</summary>
                   <div className="mt-2 text-xs space-y-1 bg-yellow-100 rounded p-2">
