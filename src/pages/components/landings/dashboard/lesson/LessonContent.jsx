@@ -142,7 +142,8 @@ const PHASE_COMPLETE = 'complete';
 // Create a file called .env in your project root with:
 // VITE_GROQ_API_KEY=your-groq-key-here
 
-// Using Groq API directly
+// Prefer backend proxy in production, fallback to direct Groq when needed.
+const AI_PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || '/api/openai';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
@@ -154,7 +155,20 @@ let groqKeyAvailable = null;
 
 async function checkGroqKey() {
   if (groqKeyAvailable !== null) return groqKeyAvailable;
-  
+
+  try {
+    const health = await fetch(AI_PROXY_URL, { method: 'GET' });
+    if (health.ok) {
+      const data = await health.json();
+      if (data?.ok) {
+        groqKeyAvailable = true;
+        return groqKeyAvailable;
+      }
+    }
+  } catch (err) {
+    // Ignore and fall back to direct key check.
+  }
+
   groqKeyAvailable = Boolean(GROQ_API_KEY);
   return groqKeyAvailable;
 }
@@ -423,24 +437,38 @@ YOU MUST:
 Complete the entire lesson before responding.`;
 
     try {
-      const res = await fetch(GROQ_API_URL, {
+      const requestPayload = {
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: isProUser ? 4000 : 3500,
+        stop: null
+      };
+
+      // Try server proxy first (recommended for production).
+      let res = await fetch(AI_PROXY_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-          max_tokens: isProUser ? 4000 : 3500,
-          stop: null
-        })
+        body: JSON.stringify(requestPayload)
       });
 
+      // If proxy fails and a direct browser key exists, try direct Groq.
+      if (!res.ok && GROQ_API_KEY) {
+        res = await fetch(GROQ_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify(requestPayload)
+        });
+      }
+
       if (!res.ok) {
-        console.warn('Groq request failed with status', res.status, 'falling back to local lesson');
-        return { ...getFallbackLesson(subject), __fallbackReason: `Groq request failed (${res.status})` };
+        console.warn('AI request failed with status', res.status, 'falling back to local lesson');
+        return { ...getFallbackLesson(subject), __fallbackReason: `AI request failed (${res.status})` };
       }
 
       const json = await res.json();
@@ -768,8 +796,9 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
                   <summary className="cursor-pointer text-yellow-700 hover:text-yellow-800">Setup instructions</summary>
                   <div className="mt-2 text-xs space-y-1 bg-yellow-100 rounded p-2">
                     <p>1. Get a free Groq API key: <a href="https://console.groq.com" target="_blank" rel="noopener" className="underline">console.groq.com</a></p>
-                    <p>2. Add to .env file: <code className="bg-yellow-200 px-1 rounded">GROQ_API_KEY=your_key_here</code></p>
-                    <p>3. Restart development server</p>
+                    <p>2. For backend (recommended), add <code className="bg-yellow-200 px-1 rounded">GROQ_API_KEY=your_key_here</code> in server env (Vercel).</p>
+                    <p>3. For local browser fallback, add <code className="bg-yellow-200 px-1 rounded">VITE_GROQ_API_KEY=your_key_here</code> in <code className="bg-yellow-200 px-1 rounded">.env</code>.</p>
+                    <p>4. Restart development server</p>
                   </div>
                 </details>
               </div>

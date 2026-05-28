@@ -9,13 +9,20 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
+  const groqKey =
+    process.env.GROQ_API_KEY ||
+    process.env.VITE_GROQ_API_KEY ||
+    process.env.OPENAI_API_KEY ||
+    process.env.VITE_OPENAI_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+
   // Handle GET request
   if (req.method === 'GET') {
     return res.status(200).json({ 
-      ok: true, 
-      hasKey: true, 
+      ok: Boolean(groqKey || geminiKey), 
+      hasKey: Boolean(groqKey || geminiKey), 
       provider: 'groq',
-      message: null
+      message: groqKey || geminiKey ? null : 'No AI API key configured'
     });
   }
 
@@ -24,29 +31,41 @@ export default async function handler(req, res) {
     const { model, messages, temperature, max_tokens } = req.body;
 
     try {
-      // Use Groq API as primary
-      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: model || 'llama-3.3-70b-versatile',
-          messages: messages,
-          temperature: temperature || 0.85,
-          max_tokens: max_tokens || 6000
-        })
-      });
+      if (!groqKey && !geminiKey) {
+        return res.status(500).json({
+          error: 'AI key not configured',
+          message: 'Set GROQ_API_KEY (or GEMINI_API_KEY) in server environment variables'
+        });
+      }
 
-      if (groqResponse.ok) {
-        const data = await groqResponse.json();
-        return res.status(200).json(data);
-      } else {
+      // Use Groq API as primary
+      if (groqKey) {
+        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: model || 'llama-3.3-70b-versatile',
+            messages: messages,
+            temperature: temperature || 0.85,
+            max_tokens: max_tokens || 6000
+          })
+        });
+
+        if (groqResponse.ok) {
+          const data = await groqResponse.json();
+          return res.status(200).json(data);
+        }
+
         console.error('Groq API error:', groqResponse.status);
-        // Try Gemini as fallback
+      }
+
+      // Try Gemini as fallback
+      if (geminiKey) {
         try {
-          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key=${process.env.GEMINI_API_KEY}`, {
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key=${geminiKey}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -66,13 +85,13 @@ export default async function handler(req, res) {
         } catch (geminiError) {
           console.error('Gemini fallback error:', geminiError);
         }
-
-        // If both fail, return error
-        return res.status(500).json({ 
-          error: 'AI service unavailable',
-          message: 'Both Groq and Gemini APIs failed'
-        });
       }
+
+      // If both fail, return error
+      return res.status(500).json({ 
+        error: 'AI service unavailable',
+        message: 'Groq request failed and no working fallback was available'
+      });
     } catch (error) {
       console.error('API handler error:', error);
       return res.status(500).json({ 
