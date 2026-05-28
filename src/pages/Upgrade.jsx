@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { ArrowLeft, Star, Check, Zap, BookOpen, BarChart2, Infinity, Trophy, Lock } from 'lucide-react';
 const FREE_FEATURES = ["1 lesson per subject per day", "Progress tracking", "Basic quiz (3 questions)", "Resource directory", "Day streak counter"];
-const PRO_FEATURES = ["Everything is Free", "Unlimited practice drills", "In-depth explanations", "Smart review sessions", "Permanent web access", "30 questions per subject", "Detailed analytics", "Downloadable study guides", "Priority support"];
+const PRO_FEATURES = ["Everything is Free", "Unlimited practice drills", "In-depth explanations", "Smart review sessions", "30 questions per subject", "Detailed analytics", "Downloadable study guides", "Priority support"];
 
 export default function Upgrade() {
   const [user, setUser] = useState(null);

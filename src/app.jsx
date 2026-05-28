@@ -10,8 +10,6 @@ import Profile from "@/pages/Profile.jsx";
 import Resources from "@/pages/Resources.jsx";
 import Upgrade from "@/pages/Upgrade.jsx";
 import RealmPad from "@/pages/RealmPad.jsx";
-import VMSession from "@/pages/VMSession.jsx";
-import FreeWeb from "@/pages/FreeWeb.jsx";
 
 function SideNavButtons() {
   const location = useLocation();
@@ -21,12 +19,11 @@ function SideNavButtons() {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/lesson", label: "Lesson", icon: BookOpen },
     { to: "/courses", label: "Courses", icon: Library },
-    { to: "/freeweb", label: "Free Web", icon: Globe },
     { to: "/games", label: "Games", icon: Gamepad2 },
     { to: "/profile", label: "Profile", icon: User },
   ];
 
-  const hideOn = ["/", "/realmpad", "/vm-session"];
+  const hideOn = ["/", "/realmpad"];
   if (hideOn.includes(location.pathname)) return null;
 
   return (
@@ -89,8 +86,6 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/lesson" element={<Lesson />} />
-        <Route path="/freeweb" element={<FreeWeb />} />
-        <Route path="/vm-session" element={<VMSession />} />
         <Route path="/games" element={<Games />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/profile" element={<Profile />} />

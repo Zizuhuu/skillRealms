@@ -4,7 +4,7 @@
 - Fixed API key configuration for production
 - Updated Vercel deployment settings
 
-skillRealms is a React + Vite app for GED-focused lessons, games, and a timed "Free Web" browser experience.
+skillRealms is a React + Vite app for GED-focused lessons and games.
 
 ## Development
 

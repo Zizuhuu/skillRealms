@@ -254,20 +254,6 @@ export default function Dashboard() {
 
         <OverallProgress progressData={progressData} />
 
-        <div className="bg-white rounded-3xl shadow-md border border-blue-100 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Free Web</h2>
-              <p className="text-sm text-gray-500">Earn 30 minutes of browsing each time you finish a lesson. Pro members get permanent web access.</p>
-            </div>
-            <Link to="/freeweb">
-              <Button size="lg" className="w-full sm:w-auto h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl">
-                Open Free Web
-              </Button>
-            </Link>
-          </div>
-        </div>
-
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-4">Your Subjects</h2>
           <div className="space-y-4">

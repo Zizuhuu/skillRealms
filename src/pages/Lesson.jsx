@@ -197,16 +197,9 @@ export default function Lesson() {
       queryClient.invalidateQueries(['dailySession']);
       queryClient.invalidateQueries(['learningProgress']);
       queryClient.invalidateQueries(['userStreak']);
-      // Set last lesson date for free web
+      // Set last lesson date
       const today = moment().format('YYYY-MM-DD');
       localStorage.setItem(`last_lesson_${user.email}`, today);
-      if (!isProStandalone) {
-        const freeWebKey = `free_web_end_${user.email}`;
-        const currentEnd = localStorage.getItem(freeWebKey);
-        const now = moment();
-        const base = currentEnd && moment(currentEnd).isAfter(now) ? moment(currentEnd) : now;
-        localStorage.setItem(freeWebKey, base.add(30, 'minutes').toISOString());
-      }
     }
   });
 
@@ -226,12 +219,8 @@ export default function Lesson() {
           </div>
           <h1 className="text-4xl font-bold text-gray-900">Amazing Work!</h1>
           <p className="text-xl text-gray-600">You've completed all your daily lessons. Your dedication is inspiring!</p>
-          <p className="text-lg text-green-600 font-medium">Open Free Web now to use your earned browsing time.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Button onClick={() => navigate('/freeweb')} size="lg" className="h-16 px-8 text-xl font-semibold bg-blue-600 hover:bg-blue-700 rounded-2xl">
-              Open Free Web
-            </Button>
-            <Button onClick={() => navigate('/dashboard')} size="lg" className="h-16 px-8 text-xl font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">
+          <div className="flex justify-center">
+            <Button onClick={() => navigate('/dashboard')} size="lg" className="h-16 px-12 text-xl font-semibold bg-green-600 hover:bg-green-700 rounded-2xl">
               Back to Dashboard
             </Button>
           </div>
