@@ -260,23 +260,8 @@ function sanitizeLessonTitle(title) {
 let groqKeyAvailable = null;
 
 async function checkGroqKey() {
-  if (groqKeyAvailable !== null) return groqKeyAvailable;
-
-  try {
-    const health = await fetch(AI_PROXY_URL, { method: 'GET' });
-    if (health.ok) {
-      const data = await health.json();
-      if (data?.ok) {
-        groqKeyAvailable = true;
-        return groqKeyAvailable;
-      }
-    }
-  } catch (err) {
-    // Ignore and fall back to direct key check.
-  }
-
-  groqKeyAvailable = Boolean(GROQ_API_KEY);
-  return groqKeyAvailable;
+  // Always return false to use local lessons as requested by the user
+  return false;
 }
 
 function safeJsonParse(raw) {
