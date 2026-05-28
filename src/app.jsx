@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
-import { Tablet, Globe, Gamepad2, Home as HomeIcon, LayoutDashboard, Library, User, BookOpen } from "lucide-react";
+import { Tablet, Globe, Gamepad2, Home as HomeIcon, LayoutDashboard, Library, User, BookOpen, PanelRightOpen, PanelRightClose } from "lucide-react";
 import Home from "@/pages/Home.jsx";
 import Dashboard from "@/pages/Dashboard.jsx";
 import Lesson from "@/pages/Lesson.jsx";
@@ -14,6 +15,7 @@ import FreeWeb from "@/pages/FreeWeb.jsx";
 
 function SideNavButtons() {
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,35 +30,54 @@ function SideNavButtons() {
   if (hideOn.includes(location.pathname)) return null;
 
   return (
-    <aside className="hidden lg:block fixed left-4 top-1/2 -translate-y-1/2 z-40">
-      <div className="bg-white/95 backdrop-blur border border-gray-200 rounded-2xl shadow-lg p-2 flex flex-col gap-2">
-        <Link
-          to="/"
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+    <div className="hidden lg:block fixed right-4 top-1/2 -translate-y-1/2 z-40">
+      {!isOpen ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="bg-white/95 backdrop-blur border border-gray-200 rounded-xl shadow-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-2"
         >
-          <HomeIcon className="w-4 h-4" />
-          Home
-        </Link>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                active
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-    </aside>
+          <PanelRightOpen className="w-4 h-4" />
+          Open Nav
+        </button>
+      ) : (
+        <aside className="bg-white/95 backdrop-blur border border-gray-200 rounded-2xl shadow-lg p-2 flex flex-col gap-2 min-w-[180px]">
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            <PanelRightClose className="w-4 h-4" />
+            Close
+          </button>
+          <Link
+            to="/"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            <HomeIcon className="w-4 h-4" />
+            Home
+          </Link>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </aside>
+      )}
+    </div>
   );
 }
 
