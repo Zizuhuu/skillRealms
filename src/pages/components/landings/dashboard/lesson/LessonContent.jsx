@@ -151,6 +151,16 @@ function getFallbackLesson(subject) {
   return lessonDatabase[subject] || lessonDatabase.math;
 }
 
+function sanitizeLessonTitle(title) {
+  const raw = typeof title === 'string' ? title : '';
+  const cleaned = raw
+    .replace(/\bai\b/gi, '')
+    .replace(/\bgenerated\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || 'Lesson';
+}
+
 let groqKeyAvailable = null;
 
 async function checkGroqKey() {
@@ -740,7 +750,7 @@ export default function LessonContent({ subject, lessonNumber, onComplete, isPro
   const visibleFallbackReason = String(fallbackReason || '').replace(/\bai\b/gi, 'lesson service');
   const data = aiLesson || getFallbackLesson(subject);
   const safeData = {
-    title: typeof data.title === 'string' ? data.title : 'Lesson Title',
+    title: sanitizeLessonTitle(data.title),
     reading: typeof data.reading === 'string' ? data.reading : 'Lesson content not available.',
     questions: Array.isArray(data.questions) ? data.questions : []
   };
