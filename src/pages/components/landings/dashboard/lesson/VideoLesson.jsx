@@ -1,0 +1,180 @@
+import React, { useState } from 'react';
+import { Play, ChevronDown, ChevronUp, Youtube } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+// Curated free YouTube educational videos per subject (GED-focused)
+const subjectVideos = {
+  math: [
+    { title: "GED Math: Order of Operations (PEMDAS)", videoId: "dAgfnK528RA", duration: "8 min" },
+    { title: "Fractions & Percentages Made Easy", videoId: "4mX0uPy-4bY", duration: "10 min" },
+    { title: "GED Math Word Problems", videoId: "E3lZWn1Z2eQ", duration: "12 min" },
+  ],
+  english: [
+    { title: "GED Reading Comprehension Tips", videoId: "WPcBMBFhB5I", duration: "9 min" },
+    { title: "Grammar: Subject-Verb Agreement", videoId: "RvbHqy29WaA", duration: "7 min" },
+    { title: "Writing Clear Sentences for the GED", videoId: "4K7OA_R4qeE", duration: "11 min" },
+  ],
+  science: [
+    { title: "GED Science: Photosynthesis Explained", videoId: "wENhHnJI1ys", duration: "6 min" },
+    { title: "Newton's Laws of Motion - Simple Explanation", videoId: "cn3dqWZhxmI", duration: "9 min" },
+    { title: "The Scientific Method for GED", videoId: "Yi0hyVeZl5Q", duration: "8 min" },
+  ],
+  social_studies: [
+    { title: "The U.S. Constitution Explained", videoId: "AUgNHT03b_o", duration: "10 min" },
+    { title: "The Civil Rights Movement Overview", videoId: "URxwe6LPvkM", duration: "12 min" },
+    { title: "How a Bill Becomes a Law", videoId: "OgVKvqTItto", duration: "7 min" },
+  ],
+  health: [
+    { title: "Nutrition Basics for Better Health", videoId: "fqhYBTg73fw", duration: "8 min" },
+    { title: "Mental Health: Understanding Depression", videoId: "z-IR48Mb3W0", duration: "10 min" },
+    { title: "Exercise and Your Body - GED Health", videoId: "2MYEuH-qjKk", duration: "6 min" },
+  ],
+};
+
+export default function VideoLesson({ subject, lessonContent }) {
+  const [expanded, setExpanded] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const videos = subjectVideos[subject] || subjectVideos.math;
+
+  // Function to find relevant videos based on lesson content
+  const getRelevantVideos = (lessonTitle, lessonReading) => {
+    if (!lessonTitle && !lessonReading) return videos;
+    
+    // Extract meaningful keywords from lesson content
+    const extractKeywords = (text) => {
+      if (!text) return [];
+      
+      // Common GED subject terms to look for
+      const subjectTerms = {
+        math: ['math', 'geometry', 'algebra', 'measurement', 'calculation', 'formula', 'equation', 'number', 'percent', 'fraction'],
+        english: ['english', 'reading', 'writing', 'grammar', 'comprehension', 'sentence', 'paragraph', 'essay', 'vocabulary'],
+        science: ['science', 'biology', 'chemistry', 'physics', 'experiment', 'scientific', 'research', 'nature', 'energy'],
+        social_studies: ['history', 'social', 'studies', 'government', 'constitution', 'civil', 'rights', 'geography', 'economics'],
+        health: ['health', 'nutrition', 'exercise', 'mental', 'disease', 'medicine', 'body', 'fitness', 'wellness']
+      };
+      
+      const textLower = text.toLowerCase();
+      const keywords = [];
+      
+      // Add subject-specific keywords
+      Object.entries(subjectTerms).forEach(([subject, terms]) => {
+        terms.forEach(term => {
+          if (textLower.includes(term)) {
+            keywords.push(term);
+          }
+        });
+      });
+      
+      // Extract other meaningful words (filter out common words)
+      const commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'this', 'that', 'these', 'those', 'what', 'which', 'who', 'when', 'where', 'why', 'how'];
+      
+      const words = textLower.split(/\s+/).filter(word => 
+        word.length > 3 && 
+        !commonWords.includes(word) &&
+        !/^\d+$/.test(word) // Remove pure numbers
+      );
+      
+      keywords.push(...words);
+      
+      return [...new Set(keywords)]; // Remove duplicates
+    };
+    
+    const titleKeywords = extractKeywords(lessonTitle);
+    const readingKeywords = extractKeywords(lessonReading);
+    const allKeywords = [...titleKeywords, ...readingKeywords];
+    
+    // Score videos based on keyword matches with weighting
+    const scoredVideos = videos.map(video => {
+      const videoText = video.title.toLowerCase();
+      let score = 0;
+      
+      allKeywords.forEach(keyword => {
+        if (videoText.includes(keyword)) {
+          // Title keywords get higher weight
+          if (titleKeywords.includes(keyword)) {
+            score += 3;
+          } else {
+            score += 1;
+          }
+        }
+      });
+      
+      return { ...video, score };
+    });
+    
+    // Sort by score and return top videos
+    return scoredVideos.sort((a, b) => b.score - a.score);
+  };
+
+  const relevantVideos = lessonContent ? getRelevantVideos(lessonContent.title, lessonContent.reading) : videos;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+            <Youtube className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-gray-900">Watch Video Lessons</p>
+            <p className="text-sm text-gray-500">{relevantVideos.length} videos matching your lesson</p>
+          </div>
+        </div>
+        {expanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gray-100 p-4 space-y-3">
+          {selectedVideo ? (
+            <div className="space-y-3">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full rounded-xl"
+                  src={`https://www.youtube.com/embed/${selectedVideo.videoId}?rel=0`}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={() => setSelectedVideo(null)}
+              >
+                ← Back to video list
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {relevantVideos.map((video, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedVideo(video)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-red-200 hover:bg-red-50 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800 text-sm">{video.title}</p>
+                      {video.score > 0 && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                          {video.score}% match
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">{video.duration}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
